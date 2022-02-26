@@ -1,0 +1,76 @@
+# CMake entry point
+cmake_minimum_required (VERSION 3.16)
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set( PROJECT_NAME sample-game-engine )
+
+find_package( OpenGL REQUIRED )
+
+if( CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR )
+    message( FATAL_ERROR "Please select another Build Directory ! (and give it a clever name, like bin_Visual2012_64bits/)" )
+endif()
+if( CMAKE_SOURCE_DIR MATCHES " " )
+	message( "Your Source Directory contains spaces. If you experience problems when compiling, this can be the cause." )
+endif()
+if( CMAKE_BINARY_DIR MATCHES " " )
+	message( "Your Build Directory contains spaces. If you experience problems when compiling, this can be the cause." )
+endif()
+
+add_subdirectory (libs)
+include_directories(
+	libs/glfw/include/
+	libs/glew/include/
+	libs/glm/
+	libs/stb/
+)
+
+add_definitions(
+	-DTW_STATIC
+	-DTW_NO_LIB_PRAGMA
+	-DTW_NO_DIRECT3D
+	-DGLEW_STATIC
+	-D_CRT_SECURE_NO_WARNINGS
+	# Required for STB to work
+	-DSTB_IMAGE_IMPLEMENTATION
+)
+
+set( HEADERS
+	src/sge.h
+	src/application.h
+	src/resource_loader.h
+	src/component.h
+	src/game_object.h
+	src/mesh.h
+	src/shader.h
+	src/texture.h
+	src/material.h
+	src/transform.h
+	src/camera.h
+	src/util.h
+	src/includes.h
+)
+
+set( SOURCES
+	src/application.cpp
+	src/resource_loader.cpp
+	src/mesh.cpp
+	src/shader.cpp
+	src/texture.cpp
+	src/material.cpp
+	src/transform.cpp
+	src/camera.cpp
+	src/util.cpp
+)
+
+include(GenerateExportHeader)
+add_library( ${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES} )
+generate_export_header( ${PROJECT_NAME} )
+target_link_libraries( ${PROJECT_NAME} PRIVATE
+	glfw
+	glew
+)
+target_include_directories( ${PROJECT_NAME} PRIVATE
+	${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR} )
+
