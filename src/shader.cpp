@@ -71,6 +71,15 @@ bool Shader::set_vec3(const std::string &name, const glm::vec3 &vec)
 	return true;
 }
 
+bool Shader::set_vec4(const std::string &name, const glm::vec4 &vec)
+{
+	GLuint location;
+	if(!get_location(name, location))
+		return false;
+	glUniform4fv(location, 1, glm::value_ptr(vec));
+	return true;
+}
+
 void Shader::reset()
 {
 	if(!m_ok)

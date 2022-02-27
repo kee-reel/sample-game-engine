@@ -11,7 +11,7 @@ ShaderConfig::ShaderConfig(std::string path) :
 {
 }
 
-void ShaderConfig::apply(const std::shared_ptr<Shader> &shader)
+void ShaderConfig::apply(const std::shared_ptr<Shader> &shader, const std::string &prefix)
 {
 	if(!is_ok())
 		return;
@@ -20,9 +20,9 @@ void ShaderConfig::apply(const std::shared_ptr<Shader> &shader)
 	for(const auto &t : m_textures)
 		t.texture->use(t.num, t.name, shader);
 	for(const auto &f : m_floats)
-		shader->set_float(f.first, f.second);
+		shader->set_float(prefix + f.first, f.second);
 	for(const auto &vec : m_vectors)
-		shader->set_vec3(vec.first, vec.second);
+		shader->set_vec3(prefix + vec.first, vec.second);
 }
 
 void ShaderConfig::reload(bool force)

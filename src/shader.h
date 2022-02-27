@@ -14,6 +14,7 @@ public:
 	bool set_uint(const std::string &name, GLuint value);
 	bool set_mat4(const std::string &name, const glm::mat4 &mat);
 	bool set_vec3(const std::string &name, const glm::vec3 &vec);
+	bool set_vec4(const std::string &name, const glm::vec4 &vec);
 
 private:
 	void reset();

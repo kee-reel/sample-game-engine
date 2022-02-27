@@ -18,19 +18,21 @@ class ShaderConfig
 		VEC3,
 		FLOAT,
         BOOL,
+        STRING,
 	};
 	std::map<std::string, Field> s_name_to_field = {
 		{"texture", TEXTURE},
 		{"vec3", VEC3},
 		{"float", FLOAT},
 		{"bool", BOOL},
+		{"string", STRING},
 	};
 
 public:
 	ShaderConfig(std::string path);
     virtual ~ShaderConfig() {}
 
-	virtual void apply(const std::shared_ptr<Shader> &shader);
+	virtual void apply(const std::shared_ptr<Shader> &shader, const std::string &prefix="");
 	void reload(bool force=true);
 
 protected:
@@ -44,6 +46,7 @@ protected:
 private:
 	bool m_is_ok;
 	std::string m_path;
+	std::string m_prefix;
 
 	std::map<std::string, std::string> m_temp_textures;
 	std::map<std::string, glm::vec3> m_temp_vectors;

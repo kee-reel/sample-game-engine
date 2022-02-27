@@ -14,13 +14,24 @@ class Light : public Component, public ShaderConfig
         POINT,
         SPOT,
 	};
+	std::map<std::string, Type> s_name_to_type = {
+		{"directional", DIRECTIONAL},
+		{"point", POINT},
+		{"spot", SPOT},
+	};
 
 public:
 	Light(const std::string &path, std::shared_ptr<GameObject> game_object);
     virtual ~Light() {}
-	void apply(const std::shared_ptr<Shader> &shader) override;
+	void apply(const std::shared_ptr<Shader> &shader, const std::string &prefix) override;
 
 private:
+    std::string parse_field(const std::string &type_str, const std::string &name, const std::string &value) override;
+    void create_components(bool force) override;
+
+private:
+    Type m_temp_light_type;
+    Type m_light_type;
     std::shared_ptr<GameObject> m_game_object;
 };
 #endif

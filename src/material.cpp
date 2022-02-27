@@ -20,11 +20,15 @@ void Material::use(const std::shared_ptr<Camera> &camera, const std::list<std::s
 	
     apply(m_shader);
 	camera->use(m_shader);
+    m_shader->set_uint("lights_count", lights.size());
     if(!m_is_emitting)
     {
+        int i = 0;
         for(const auto& light : lights)
         {
-            light->apply(m_shader);
+            std::ostringstream ss;
+            ss << "lights[" << i++ << "].";
+            light->apply(m_shader, ss.str());
         }
     }
 	m_shader->set_vec3("viewPosition", camera->get_pos());
