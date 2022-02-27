@@ -15,6 +15,9 @@ public:
 	Transform();
 	~Transform();
 	const glm::mat4 &get_model();
+	const glm::vec3& get_pos();
+	const glm::vec3& get_rot();
+	const glm::vec3& get_scale();
 	void set_pos(glm::vec3 pos);
 	void set_rot(glm::vec3 rot);
 	void set_scale(glm::vec3 scale);

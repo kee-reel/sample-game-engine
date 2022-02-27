@@ -1,4 +1,3 @@
-cd libs
 # GLEW
 if [[ ! -e glew ]]; then
     git clone https://github.com/nigels-com/glew

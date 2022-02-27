@@ -63,7 +63,7 @@ bool Application::init(int width, int height, std::string &&window_name)
 		return false;
 	}
 
-	toggle_fullscreen(false);
+	toggle_fullscreen(true);
 	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
@@ -86,12 +86,13 @@ bool Application::draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	for(auto material_to_mesh = m_game_objects.begin(); material_to_mesh != m_game_objects.end(); material_to_mesh++)
 	{
-		material_to_mesh->first->use(m_camera);
+        auto &&material = material_to_mesh->first;
+		material->use(m_camera, m_lights);
 		for(auto mesh_to_go = material_to_mesh->second.begin(); mesh_to_go != material_to_mesh->second.end(); mesh_to_go++)
 		{
 			for(auto &go : mesh_to_go->second)
 			{
-				material_to_mesh->first->use_model(go->transform.get_model());
+				material->use_model(go->transform.get_model());
 				mesh_to_go->first->draw();
 			}
 		}
@@ -108,14 +109,25 @@ bool Application::draw()
 	return !m_is_quitting;
 }
 
-std::shared_ptr<IGameObject> Application::add_game_object(const std::string &material_path)
+std::shared_ptr<IGameObject> Application::add_game_object(
+        const std::string &material_path, const std::string &light_path)
 {
 	std::shared_ptr<Material> material = ResourceLoader::instance().get_material(material_path);
 	std::shared_ptr<Mesh> mesh = ResourceLoader::instance().get_mesh();
 	auto &mesh_to_go = m_game_objects[material];
 	auto &&go = std::shared_ptr<GameObject>(new GameObject());
+    if(!light_path.empty())
+    {
+        auto &&light = std::shared_ptr<Light>(new Light(light_path, go));
+        m_lights.push_back(light);
+    }
 	mesh_to_go[mesh].push_back(go);
 	return go;
+}
+
+ITransform &Application::get_camera_transform()
+{
+    return m_camera->get_transform();
 }
 
 void Application::framebuffer_size_callback(GLFWwindow* window, int width, int height)

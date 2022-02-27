@@ -30,7 +30,9 @@ public:
 	virtual bool init(int width, int height, std::string &&window_name) = 0;
 	virtual void fini() = 0;
 	virtual bool draw() = 0;
-	virtual std::shared_ptr<IGameObject> add_game_object(const std::string &material) = 0;
+	virtual std::shared_ptr<IGameObject> add_game_object(
+            const std::string &material, const std::string &light) = 0;
+    virtual ITransform &get_camera_transform() = 0;
 };
 
 std::shared_ptr<IApplication> instance();

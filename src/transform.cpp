@@ -21,6 +21,21 @@ const glm::mat4 &Transform::get_model()
 	return m_model;
 }
 
+const glm::vec3& Transform::get_pos()
+{
+    return m_pos;
+}
+
+const glm::vec3& Transform::get_rot()
+{
+    return m_rot;
+}
+
+const glm::vec3& Transform::get_scale()
+{
+    return m_scale;
+}
+
 void Transform::set_pos(glm::vec3 pos)
 {
 	m_pos = pos;
@@ -57,8 +72,8 @@ void Transform::set_scale(float x, float y, float z)
 void Transform::recalc()
 {
 	m_model = glm::mat4(1.);
-	m_model = glm::scale(m_model, m_scale);
 	m_model = glm::translate(m_model, m_pos);
+	m_model = glm::scale(m_model, m_scale);
 	m_model = glm::rotate(m_model, m_rot.x, glm::vec3(1., 0., 0.));
 	m_model = glm::rotate(m_model, m_rot.y, glm::vec3(0., 1., 0.));
 	m_model = glm::rotate(m_model, m_rot.z, glm::vec3(0., 0., 1.));

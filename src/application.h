@@ -3,6 +3,7 @@
 #include "camera.h"
 #include "material.h"
 #include "mesh.h"
+#include "light.h"
 #include "game_object.h"
 
 #include "sge.h"
@@ -21,7 +22,9 @@ public:
 	bool init(int width, int height, std::string &&window_name) override;
 	void fini() override;
 	bool draw() override;
-	std::shared_ptr<IGameObject> add_game_object(const std::string &material_path) override;
+	std::shared_ptr<IGameObject> add_game_object(
+            const std::string &material_path, const std::string &light_path) override;
+    ITransform &get_camera_transform() override;
 
 private:
 	static std::shared_ptr<Application> &instance();
@@ -47,6 +50,7 @@ private:
 
 	std::shared_ptr<Camera> m_camera;
 	material_to_mesh_t m_game_objects;
+    std::list<std::shared_ptr<Light>> m_lights;
 };
 
 };

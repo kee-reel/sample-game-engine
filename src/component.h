@@ -1,6 +1,7 @@
 #ifndef COMPONENT_H_
 #define COMPONENT_H_
-static unsigned long int id_gen = 0;
+
+static uint64_t id_gen = 0;
 
 class Component
 {
@@ -16,12 +17,12 @@ public:
     };
 
 	Component(Type type) :
-        m_type(type),
+        m_comp_type(type),
 		uid(id_gen++)
 	{}
 
 public:
-    const Type m_type;
-	const unsigned long int uid;
+    const Type m_comp_type;
+	const uint64_t uid;
 };
 #endif

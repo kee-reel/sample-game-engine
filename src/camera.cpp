@@ -5,20 +5,19 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 Camera::Camera(int width, int height) :
-	m_pos(glm::vec3(0., 0., 0.)),
 	m_front(glm::vec3(0., 0., -1.)),
 	m_up(glm::vec3(0., 1., 0.)),
-	m_mouse_inited(false),
-	m_yaw(-90.),
-	m_pitch(0.)
+	m_mouse_inited(false)
 {
+    m_transform.set_pos(0, 0, 0);
+    m_transform.set_rot(-90, 0, 0);
 	update_aspect(width, height);
 	recalc();
 }
 
 const glm::vec3 &Camera::get_pos()
 {
-	return m_pos;
+	return m_transform.get_pos();
 }
 
 const glm::mat4 &Camera::get_view()
@@ -28,8 +27,10 @@ const glm::mat4 &Camera::get_view()
 
 void Camera::move(glm::vec3 move)
 {
-	m_pos += move.x * glm::normalize(glm::cross(m_front, m_up));
-	m_pos += move.z * m_front;
+    glm::vec3 pos = m_transform.get_pos();
+	pos += move.x * glm::normalize(glm::cross(m_front, m_up));
+	pos += move.z * m_front;
+    m_transform.set_pos(pos);
 	recalc();
 }
 
@@ -51,18 +52,21 @@ void Camera::mouse(double xpos, double ypos)
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
 
-	m_yaw += xoffset;
-	m_pitch += yoffset;
+    auto &&rot = m_transform.get_rot();
+	float yaw = rot.x + xoffset;
+	float pitch = rot.y + yoffset;
 
-	if(m_pitch > 89.0f)
-		m_pitch = 89.0f;
-	if(m_pitch < -89.0f)
-		m_pitch = -89.0f;
+	if(pitch > 89.0f)
+		pitch = 89.0f;
+	if(pitch < -89.0f)
+		pitch = -89.0f;
+
+    m_transform.set_rot(rot.x + xoffset, rot.y + yoffset, rot.z);
 
 	glm::vec3 direction;
-	direction.x = cos(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
-	direction.y = sin(glm::radians(m_pitch));
-	direction.z = sin(glm::radians(m_yaw)) * cos(glm::radians(m_pitch));
+	direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	direction.y = sin(glm::radians(pitch));
+	direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	m_front = glm::normalize(direction);
 	recalc();
 }
@@ -79,5 +83,6 @@ void Camera::use(std::shared_ptr<Shader> shader)
 
 void Camera::recalc()
 {
-	m_view = glm::lookAt(m_pos, m_pos + m_front, m_up);
+    auto &&pos = m_transform.get_pos();
+	m_view = glm::lookAt(pos, pos + m_front, m_up);
 }

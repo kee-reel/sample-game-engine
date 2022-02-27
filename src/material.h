@@ -5,42 +5,25 @@
 #include "shader.h"
 #include "camera.h"
 #include "component.h"
+#include "light.h"
+#include "shader_config.h"
 
-class Material : public Component
+class Material : public Component, public ShaderConfig
 {
-	struct TextureWrapper
-	{
-		int num;
-		std::string name;
-		std::shared_ptr<Texture> texture;
-	};
-	enum Field
-	{
-		SHADER,
-		TEXTURE,
-		VEC3,
-		FLOAT,
-	};
-	std::map<std::string, Field> s_name_to_field = {
-		{"shader", SHADER},
-		{"texture", TEXTURE},
-		{"vec3", VEC3},
-		{"float", FLOAT},
-	};
-
 public:
 	Material(std::string path);
+    virtual ~Material() {}
 
-	void use(const std::shared_ptr<Camera> &camera);
+	void use(const std::shared_ptr<Camera> &camera, const std::list<std::shared_ptr<Light>> &lights);
 	void use_model(const glm::mat4 &mat);
-	void reload(bool reload=true);
 
 private:
-	bool m_is_ok;
-	std::string m_path;
-	std::shared_ptr<Shader> m_shader;
-	std::vector<TextureWrapper> m_textures;
-	std::map<std::string, glm::vec3> m_vectors;
-	std::map<std::string, float> m_floats;
+    std::string parse_field(const std::string &type_str, const std::string &name, const std::string &value) override;
+    void create_components(bool force) override;
+
+private:
+    std::shared_ptr<Shader> m_shader;
+	std::vector<std::string> m_temp_shaders;
+    bool m_is_emitting;
 };
 #endif

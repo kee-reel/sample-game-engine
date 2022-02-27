@@ -1,12 +1,12 @@
 #ifndef LIGHT_H_
 #define LIGHT_H_
 #include "includes.h"
-#include "texture.h"
 #include "shader.h"
-#include "camera.h"
 #include "component.h"
+#include "game_object.h"
+#include "shader_config.h"
 
-class Light : public Component
+class Light : public Component, public ShaderConfig
 {
 	enum Type
 	{
@@ -16,14 +16,11 @@ class Light : public Component
 	};
 
 public:
-	Light(Type type, glm::vec3 color);
-
-	void use(const std::shared_ptr<Camera> &camera);
-	void use_model(const glm::mat4 &mat);
-	void reload(bool reload=true);
+	Light(const std::string &path, std::shared_ptr<GameObject> game_object);
+    virtual ~Light() {}
+	void apply(const std::shared_ptr<Shader> &shader) override;
 
 private:
-    float m_radius;
-    glm::vec3 m_color;
+    std::shared_ptr<GameObject> m_game_object;
 };
 #endif

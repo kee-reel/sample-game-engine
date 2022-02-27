@@ -48,6 +48,8 @@ set( HEADERS
 	src/material.h
 	src/transform.h
 	src/camera.h
+	src/light.h
+	src/shader_config.h
 	src/util.h
 	src/includes.h
 )
@@ -61,6 +63,8 @@ set( SOURCES
 	src/material.cpp
 	src/transform.cpp
 	src/camera.cpp
+	src/light.cpp
+	src/shader_config.cpp
 	src/util.cpp
 )
 

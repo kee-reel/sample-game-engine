@@ -3,6 +3,7 @@
 #include "includes.h"
 
 #include "shader.h"
+#include "transform.h"
 
 class Camera
 {
@@ -14,18 +15,18 @@ public:
 	void mouse(double pos_x, double pos_y);
 	void use(std::shared_ptr<Shader> shader);
 	void update_aspect(int width, int height);
+	sge::ITransform &get_transform() { return m_transform; }
 
 private:
 	void recalc();
 
 private:
 	glm::mat4 m_view;
-	glm::vec3 m_pos;
 	glm::vec3 m_front;
 	glm::vec3 m_up;
 	glm::mat4 m_projection;
 	bool m_mouse_inited;
 	double m_last_x, m_last_y;
-	float m_yaw, m_pitch;
+    Transform m_transform;
 };
 #endif
