@@ -5,7 +5,7 @@
 
 Transform::Transform() :
 	m_pos(glm::vec3(0., 0., 0.)),
-	m_rot(glm::vec3(-90., 0., 0.)),
+	m_rot(glm::vec3(0., 0., 0.)),
 	m_scale(glm::vec3(1., 1., 1.))
 {
 	recalc();

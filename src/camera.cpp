@@ -8,8 +8,6 @@
 Camera::Camera(int width, int height) :
 	m_mouse_inited(false)
 {
-    m_transform.set_pos({-5, 0, 0});
-    m_transform.set_rot({0, 0, 0});
 	update_aspect(width, height);
 	recalc();
 }
