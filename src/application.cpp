@@ -43,7 +43,7 @@ bool Application::init(int width, int height, std::string &&window_name)
 	glfwWindowHint(GLFW_SAMPLES, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 
 	glfwSetErrorCallback(error_callback);
 
@@ -57,13 +57,14 @@ bool Application::init(int width, int height, std::string &&window_name)
 	glfwSetCursorPosCallback(m_window, mouse_callback);
 
 	glewExperimental = true;
-	if (glewInit() != GLEW_OK) {
-		error_msg("Failed to init GLEW.");
+    GLenum err;
+	if ((err = glewInit()) != GLEW_OK) {
+        std::cerr << glewGetErrorString(err) << std::endl;
 		glfwTerminate();
 		return false;
 	}
 
-	toggle_fullscreen(true);
+	toggle_fullscreen(false);
 	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
@@ -127,7 +128,7 @@ std::shared_ptr<IGameObject> Application::add_game_object(
 
 ITransform &Application::get_camera_transform()
 {
-    return m_camera->get_transform();
+    return m_camera->transform();
 }
 
 void Application::framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -194,9 +195,10 @@ void Application::handle_controls()
 	}
 
 	int x = is_key_pressed(GLFW_KEY_D) - is_key_pressed(GLFW_KEY_A);
-	int y = is_key_pressed(GLFW_KEY_SPACE) - is_key_pressed(GLFW_KEY_LEFT_CONTROL);
+	int y = is_key_pressed(GLFW_KEY_LEFT_CONTROL) - is_key_pressed(GLFW_KEY_SPACE);
 	int z = is_key_pressed(GLFW_KEY_W) - is_key_pressed(GLFW_KEY_S);
-	m_camera->move(glm::vec3(x, y, z) * m_dt.count());
+    if(x || y || z)
+        m_camera->move(glm::vec3(x, y, z) * m_dt.count());
 }
 
 void Application::toggle_fullscreen(bool enabled)

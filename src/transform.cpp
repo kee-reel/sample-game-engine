@@ -5,7 +5,7 @@
 
 Transform::Transform() :
 	m_pos(glm::vec3(0., 0., 0.)),
-	m_rot(glm::vec3(0., 0., 0.)),
+	m_rot(glm::vec3(-90., 0., 0.)),
 	m_scale(glm::vec3(1., 1., 1.))
 {
 	recalc();
@@ -36,6 +36,16 @@ const glm::vec3& Transform::get_scale()
     return m_scale;
 }
 
+const glm::vec3& Transform::front()
+{
+    return m_front;
+}
+
+const glm::vec3& Transform::up()
+{
+    return m_up;
+}
+
 void Transform::set_pos(glm::vec3 pos)
 {
 	m_pos = pos;
@@ -54,23 +64,28 @@ void Transform::set_scale(glm::vec3 scale)
 	recalc();
 }
 
-void Transform::set_pos(float x, float y, float z)
+void Transform::move(glm::vec3 diff)
 {
-	set_pos(glm::vec3(x, y, z));
+    auto right = glm::normalize(glm::cross(m_front, m_up));
+	m_pos += right * diff.x;
+	m_pos += glm::normalize(glm::cross(m_front, right)) * diff.y;
+	m_pos += diff.z * m_front;
+	recalc();
 }
 
-void Transform::set_rot(float x, float y, float z)
+void Transform::rotate(glm::vec3 diff)
 {
-	set_rot(glm::vec3(x, y, z));
-}
-
-void Transform::set_scale(float x, float y, float z)
-{
-	set_scale(glm::vec3(x, y, z));
+    m_rot += diff;
+	recalc();
 }
 
 void Transform::recalc()
 {
+	m_front = glm::normalize(glm::vec3{
+	    cos(glm::radians(m_rot.y)) * cos(glm::radians(m_rot.x)),
+	    sin(glm::radians(m_rot.x)),
+	    sin(glm::radians(m_rot.y)) * cos(glm::radians(m_rot.x))
+    });
 	m_model = glm::mat4(1.);
 	m_model = glm::translate(m_model, m_pos);
 	m_model = glm::scale(m_model, m_scale);

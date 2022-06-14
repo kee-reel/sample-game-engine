@@ -21,6 +21,9 @@ void Light::apply(const std::shared_ptr<Shader> &shader, const std::string &pref
         case Type::POINT:
             shader->set_vec4(prefix + "position", glm::vec4(m_game_object->transform.get_pos(), 1.0f));
             break;
+        case Type::SPOT:
+            shader->set_vec4(prefix + "position", glm::vec4(m_game_object->transform.get_pos(), 1.0f));
+            break;
     }
 }
 
@@ -36,6 +39,7 @@ std::string Light::parse_field(const std::string &type_str, const std::string &n
             return ss.str();
         }
         m_temp_light_type = iter->second;
+        return "";
     }
     else
         return ShaderConfig::parse_field(type_str, name, value);

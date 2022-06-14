@@ -9,6 +9,7 @@ ShaderConfig::ShaderConfig(std::string path) :
 	m_is_ok(false),
 	m_path(path)
 {
+        std::cout << m_path << std::endl;
 }
 
 void ShaderConfig::apply(const std::shared_ptr<Shader> &shader, const std::string &prefix)
@@ -27,6 +28,7 @@ void ShaderConfig::apply(const std::shared_ptr<Shader> &shader, const std::strin
 
 void ShaderConfig::reload(bool force)
 {
+    std::cout << m_path << std::endl;
 	std::string data = read_file(m_path);
 	if(data.empty())
 		return;
@@ -117,6 +119,7 @@ void ShaderConfig::create_components(bool force)
 	for(auto iter = m_temp_vectors.begin(); iter != m_temp_vectors.end(); ++iter)
 	{
 		m_vectors[iter->first] = iter->second;
+        std::cout << iter->first << ' ' << iter->second << std::endl;
 	}
 	m_temp_vectors.clear();
 

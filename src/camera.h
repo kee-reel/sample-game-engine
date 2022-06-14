@@ -11,19 +11,17 @@ public:
 	Camera(int width, int height);
 	const glm::mat4 &get_view();
 	const glm::vec3 &get_pos();
-	void move(glm::vec3 move);
-	void mouse(double pos_x, double pos_y);
 	void use(std::shared_ptr<Shader> shader);
 	void update_aspect(int width, int height);
-	sge::ITransform &get_transform() { return m_transform; }
+	sge::ITransform &transform() { return m_transform; }
+    void mouse(double xpos, double ypos);
+    void move(glm::vec3 mov);
 
 private:
 	void recalc();
 
 private:
 	glm::mat4 m_view;
-	glm::vec3 m_front;
-	glm::vec3 m_up;
 	glm::mat4 m_projection;
 	bool m_mouse_inited;
 	double m_last_x, m_last_y;

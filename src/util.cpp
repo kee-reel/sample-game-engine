@@ -1,9 +1,7 @@
-#include <cstdlib>
-#include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstdlib>
 
-#include "util.h"
 #include "util.h"
 
 void error_msg(const char *msg, const char *extra, const char *path)
@@ -34,4 +32,9 @@ std::string read_file(const std::string &path)
 		return "";
 	}
 	return sstr.str();
+}
+
+std::ostream& operator<<(std::ostream& out, const glm::vec3& v)
+{
+    return out << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
 }
