@@ -19,7 +19,7 @@ class Application : public IApplication
 public:
 	Application();
 	virtual ~Application();
-	bool init(int width, int height, std::string &&window_name) override;
+	bool init(int width, int height, std::string &&window_name, std::string main_path) override;
 	void fini() override;
 	bool draw() override;
 	std::shared_ptr<IGameObject> add_game_object(

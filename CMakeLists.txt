@@ -24,6 +24,8 @@ include_directories(
 	libs/glew/include/
 	libs/glm/
 	libs/stb/
+	libs/lua/upstream/include/
+	libs/sol2/include/
 )
 
 add_definitions(
@@ -69,12 +71,14 @@ set( SOURCES
 )
 
 include(GenerateExportHeader)
-add_library( ${PROJECT_NAME} SHARED ${HEADERS} ${SOURCES} )
+add_library( ${PROJECT_NAME} STATIC ${HEADERS} ${SOURCES} )
 generate_export_header( ${PROJECT_NAME} )
 target_link_libraries( ${PROJECT_NAME} PRIVATE
 	glfw
 	glew
+    lua::lib
+    sol2
 )
 target_include_directories( ${PROJECT_NAME} PRIVATE
-	${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR} )
-
+	${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}
+)

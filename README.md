@@ -16,7 +16,5 @@ Done:
 	* Textures
 	* Simple lighting
 	* Materials (dedicated files with .mat extention)
+* Lua scripts for scene management
 
-To be done:
-
-* Lua scripting

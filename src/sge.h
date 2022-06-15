@@ -39,7 +39,7 @@ class IApplication
 {
 public:
 	virtual ~IApplication() {};
-	virtual bool init(int width, int height, std::string &&window_name) = 0;
+	virtual bool init(int width, int height, std::string &&window_name, std::string main_path) = 0;
 	virtual void fini() = 0;
 	virtual bool draw() = 0;
 	virtual std::shared_ptr<IGameObject> add_game_object(

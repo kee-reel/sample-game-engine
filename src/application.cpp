@@ -3,6 +3,8 @@
 #include "includes.h"
 #include "util.h"
 
+#include <sol/sol.hpp>
+
 namespace sge
 {
 
@@ -18,6 +20,22 @@ std::shared_ptr<Application> &Application::instance()
 	return s_app;
 }
 
+std::shared_ptr<IGameObject> add_game_object1(
+        const std::string &material_path, const std::string &light_path)
+{
+    return instance()->add_game_object(material_path, light_path);
+}
+
+bool draw1()
+{
+    return instance()->draw();
+}
+
+ITransform &get_camera_transform1()
+{
+    return instance()->get_camera_transform();
+}
+
 Application::Application() :
 	m_frame_duration(1000./ 60),
 	m_is_quitting(false)
@@ -29,7 +47,7 @@ Application::~Application()
 
 }
 
-bool Application::init(int width, int height, std::string &&window_name)
+bool Application::init(int width, int height, std::string &&window_name, std::string main_path)
 {
 	m_width = width;
 	m_height = height;
@@ -69,6 +87,47 @@ bool Application::init(int width, int height, std::string &&window_name)
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	m_camera.reset(new Camera(m_width, m_height));
+
+    sol::state lua;
+    try
+    {
+        lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math);
+        lua.set_function("add_game_object", &add_game_object1);
+        lua.set_function("draw", &draw1);
+        lua.set_function("get_camera_transform", &get_camera_transform1);
+        lua.new_usertype<glm::vec3>("vec3",
+            sol::constructors<glm::vec3(float,float,float)>()
+        );
+        lua.new_usertype<IGameObject>("gameobject",
+            sol::constructors<>(),
+            "get_transform", &IGameObject::get_transform
+        );
+        lua.new_usertype<ITransform>("transform",
+            sol::constructors<>(),
+            "set_pos", &ITransform::set_pos,
+            "set_rot", &ITransform::set_rot,
+            "set_scale", &ITransform::set_scale
+
+            /*
+            virtual const glm::vec3& get_pos() = 0;
+            virtual const glm::vec3& get_rot() = 0;
+            virtual const glm::vec3& get_scale() = 0;
+
+            virtual const glm::vec3& front() = 0;
+            virtual const glm::vec3& up() = 0;
+
+            virtual void move(glm::vec3 diff) = 0;
+            virtual void rotate(glm::vec3 diff) = 0;
+            */
+        );
+
+        lua.script_file(main_path);
+    }
+    catch(std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+
 	return true;
 }
 
@@ -109,7 +168,6 @@ bool Application::draw()
 	
 	return !m_is_quitting;
 }
-
 std::shared_ptr<IGameObject> Application::add_game_object(
         const std::string &material_path, const std::string &light_path)
 {

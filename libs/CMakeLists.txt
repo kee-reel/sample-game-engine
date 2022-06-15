@@ -8,7 +8,7 @@ add_definitions(
 
 ### GLFW ###
 
-add_subdirectory( glfw )
+add_subdirectory(glfw)
 
 include_directories(
 	glfw/include/GLFW/
@@ -16,34 +16,36 @@ include_directories(
 )
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-set( OPENGL_LIBRARY
-	${OPENGL_LIBRARY}
-	-lGL -lGLU -lXrandr -lXext -lX11 -lrt
-	${CMAKE_DL_LIBS}
-	${GLFW_LIBRARIES}
-)
+    set( OPENGL_LIBRARY
+        ${OPENGL_LIBRARY}
+        -lGL -lGLU -lXrandr -lXext -lX11 -lrt
+        ${CMAKE_DL_LIBS}
+        ${GLFW_LIBRARIES}
+    )
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-set( OPENGL_LIBRARY
-	${OPENGL_LIBRARY}
-	${CMAKE_DL_LIBS}
-	${GLFW_LIBRARIES}
-)
+    set( OPENGL_LIBRARY
+        ${OPENGL_LIBRARY}
+        ${CMAKE_DL_LIBS}
+        ${GLFW_LIBRARIES}
+    )
 endif( ${CMAKE_SYSTEM_NAME} MATCHES "Linux" )
 
 ### GLEW ###
 
-set( GLEW_SOURCE
+add_library( glew STATIC
 	glew/src/glew.c
-)
-
-add_library( glew SHARED
-	${GLEW_SOURCE}
 )
 
 target_link_libraries( glew
 	${OPENGL_LIBRARY}
 	${EXTRA_LIBS}
 )
+
+### Lua ###
+
+add_subdirectory(lua)
+add_subdirectory(sol2)
+
 
 ### Assimp ###
 

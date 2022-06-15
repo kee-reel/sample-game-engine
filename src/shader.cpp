@@ -168,7 +168,6 @@ bool Shader::check_status(GLuint object, GLuint status, const char *msg, const c
 		{
 		case GL_COMPILE_STATUS:
 			glGetShaderInfoLog(object, len, NULL, info_log.data());
-			std::cout << info_log.data() << std::endl;
 			break;
 		case GL_LINK_STATUS:
 			glGetProgramInfoLog(object, len, NULL, info_log.data());
