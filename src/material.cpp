@@ -1,5 +1,4 @@
 #include <list>
-
 #include "material.h"
 
 #include "resource_loader.h"
@@ -42,7 +41,7 @@ void Material::use_model(const glm::mat4 &model)
 	m_shader->set_mat4("model", model);
 }
 
-std::string Material::parse_field(const std::string &type_str, const std::string &name, const std::string &value)
+std::string Material::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)
 {
     if(!type_str.compare("shader"))
     {
@@ -51,7 +50,7 @@ std::string Material::parse_field(const std::string &type_str, const std::string
     }
     else if(!name.compare("is_emitting"))
     {
-        m_is_emitting = !value.compare("true");
+        m_is_emitting = bool(value);
     }
     return ShaderConfig::parse_field(type_str, name, value);
 }

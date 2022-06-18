@@ -26,6 +26,7 @@ include_directories(
 	libs/stb/
 	libs/lua/upstream/include/
 	libs/sol2/include/
+	libs/assimp/include/
 )
 
 add_definitions(
@@ -33,7 +34,6 @@ add_definitions(
 	-DTW_NO_LIB_PRAGMA
 	-DTW_NO_DIRECT3D
 	-DGLEW_STATIC
-	-D_CRT_SECURE_NO_WARNINGS
 	# Required for STB to work
 	-DSTB_IMAGE_IMPLEMENTATION
 )
@@ -78,6 +78,8 @@ target_link_libraries( ${PROJECT_NAME} PRIVATE
 	glew
     lua::lib
     sol2
+    assimp
+    nlohmann_json
 )
 target_include_directories( ${PROJECT_NAME} PRIVATE
 	${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}

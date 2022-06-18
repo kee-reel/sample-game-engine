@@ -1,5 +1,8 @@
 #include <list>
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 #include "shader_config.h"
 
 #include "resource_loader.h"
@@ -27,54 +30,40 @@ void ShaderConfig::apply(const std::shared_ptr<Shader> &shader, const std::strin
 
 void ShaderConfig::reload(bool force)
 {
-	std::string data = read_file(m_path);
-	if(data.empty())
-		return;
-	std::istringstream stream(data);
-	std::string line;    
-	std::string type_delim = ":";
-	std::string name_delim = "=";
-	int i = 0;
-	std::list<std::string> errors;
-	while (std::getline(stream, line)) {
-		if(line.size() == 0)
-			continue;
-		++i;
-		int type_pos = line.find(type_delim);
-		int name_pos = line.find(name_delim);
-		if(type_pos < 0 || name_pos < 0)
-		{
-			std::ostringstream ss;
-			ss << "No delimeters \" \" or \"=\" on the line: " << i;
-			errors.push_back(ss.str());
-			continue;
-		}
-		auto type_str = line.substr(0, type_pos);
-		auto name = line.substr(type_pos+1, name_pos-type_pos-1);
-		auto value = line.substr(name_pos+1);
-        auto err = parse_field(type_str, name, value);
-        if(!err.empty())
-            errors.push_back(err);
-	}
-	if(errors.size() > 0)
-	{
-		std::cerr << "In file " << m_path << ":" << std::endl;
-		for(const auto &str : errors)
-			std::cerr << str << std::endl;
-		return;
-	}
+    std::ifstream f(m_path);
+    json config;
+    f >> config;
+    f.close();
+
+    std::list<std::string> errors;
+    for(auto iter = config.begin(); iter != config.end(); iter++)
+    {
+        for(auto v_iter = iter.value().begin(); v_iter != iter.value().end(); v_iter++)
+        {
+            auto err = parse_field(iter.key(), v_iter.key(), v_iter.value());
+            if(!err.empty())
+                errors.push_back(err);
+        }
+    }
+    if(errors.size())
+    {
+        std::cout << "Errors during shader processing:" << std::endl;
+        for(auto &e : errors)
+            std::cout << e << std::endl;
+        return;
+    }
 
     create_components(force);
 	m_is_ok = true;
 }
 
-std::string ShaderConfig::parse_field(const std::string &type_str, const std::string &name, const std::string &value)
+std::string ShaderConfig::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)
 {
     auto iter = s_name_to_field.find(type_str);
     if(iter == s_name_to_field.end())
     {
         std::ostringstream ss;
-        ss << "Unknown field type \"" << type_str;
+        ss << "Unknown field type " << type_str;
         return ss.str();
     }
 
@@ -84,20 +73,10 @@ std::string ShaderConfig::parse_field(const std::string &type_str, const std::st
             m_temp_textures[name] = value;
             break;
         case Field::VEC3:
-        {
-            std::istringstream iss(value);
-            glm::vec3 v;
-            iss >> v.x >> v.y >> v.z;
-            m_temp_vectors[name] = v;
-        }
-        break;
+            m_temp_vectors[name] = glm::vec3{value[0], value[1], value[2]};
+            break;
         case Field::FLOAT:
-        {
-            std::istringstream iss(value);
-            float v;
-            iss >> v;
-            m_temp_floats[name] = v;
-        }
+            m_temp_floats[name] = value;
     }
     return "";
 }

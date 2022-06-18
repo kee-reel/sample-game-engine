@@ -1,4 +1,1 @@
 build/*
-libs/*
-!libs/CMakeLists.txt
-!libs/install-libs.sh

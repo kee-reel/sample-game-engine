@@ -26,7 +26,7 @@ public:
 	void apply(const std::shared_ptr<Shader> &shader, const std::string &prefix) override;
 
 private:
-    std::string parse_field(const std::string &type_str, const std::string &name, const std::string &value) override;
+    std::string parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value) override;
     void create_components(bool force) override;
 
 private:

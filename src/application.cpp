@@ -1,39 +1,24 @@
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 #include "application.h"
 
 #include "includes.h"
 #include "util.h"
 
-#include <sol/sol.hpp>
-
 namespace sge
 {
 
-std::shared_ptr<Application> s_app = std::shared_ptr<Application>(new Application());
+Application Application::s_instance;
 
-std::shared_ptr<IApplication> instance()
+bool init(std::string config_path)
 {
-	return s_app;
+    return Application::instance().init(config_path);
 }
 
-std::shared_ptr<Application> &Application::instance()
+Application &Application::instance()
 {
-	return s_app;
-}
-
-std::shared_ptr<IGameObject> add_game_object1(
-        const std::string &material_path, const std::string &light_path)
-{
-    return instance()->add_game_object(material_path, light_path);
-}
-
-bool draw1()
-{
-    return instance()->draw();
-}
-
-ITransform &get_camera_transform1()
-{
-    return instance()->get_camera_transform();
+	return s_instance;
 }
 
 Application::Application() :
@@ -47,11 +32,8 @@ Application::~Application()
 
 }
 
-bool Application::init(int width, int height, std::string &&window_name, std::string main_path)
+bool Application::init(std::string config_path)
 {
-	m_width = width;
-	m_height = height;
-	m_window_name = window_name;
 	if( !glfwInit() )
 	{
 		error_msg("Failed to initialize GLFW.");
@@ -64,6 +46,16 @@ bool Application::init(int width, int height, std::string &&window_name, std::st
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
 
 	glfwSetErrorCallback(error_callback);
+
+    std::ifstream f(config_path);
+    json config;
+    f >> config;
+    f.close();
+
+    auto window_config = config["window"];
+	m_width = window_config["width"];
+	m_height = window_config["height"];
+	m_window_name = window_config["title"];
 
 	m_window = glfwCreateWindow(m_width, m_height, m_window_name.c_str(), NULL, NULL);
 	if( m_window == NULL ){
@@ -84,49 +76,15 @@ bool Application::init(int width, int height, std::string &&window_name, std::st
 
 	toggle_fullscreen(false);
 	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	m_camera.reset(new Camera(m_width, m_height));
 
-    sol::state lua;
-    try
-    {
-        lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math);
-        lua.set_function("add_game_object", &add_game_object1);
-        lua.set_function("draw", &draw1);
-        lua.set_function("get_camera_transform", &get_camera_transform1);
-        lua.new_usertype<glm::vec3>("vec3",
-            sol::constructors<glm::vec3(float,float,float)>()
-        );
-        lua.new_usertype<IGameObject>("gameobject",
-            sol::constructors<>(),
-            "get_transform", &IGameObject::get_transform
-        );
-        lua.new_usertype<ITransform>("transform",
-            sol::constructors<>(),
-            "set_pos", &ITransform::set_pos,
-            "set_rot", &ITransform::set_rot,
-            "set_scale", &ITransform::set_scale
+    auto objects = config["objects"];
+    for(auto iter = objects.begin(); iter != objects.end(); iter++)
+        add_game_object(iter.value());
 
-            /*
-            virtual const glm::vec3& get_pos() = 0;
-            virtual const glm::vec3& get_rot() = 0;
-            virtual const glm::vec3& get_scale() = 0;
-
-            virtual const glm::vec3& front() = 0;
-            virtual const glm::vec3& up() = 0;
-
-            virtual void move(glm::vec3 diff) = 0;
-            virtual void rotate(glm::vec3 diff) = 0;
-            */
-        );
-
-        lua.script_file(main_path);
-    }
-    catch(std::exception& e)
-    {
-        std::cout << e.what() << std::endl;
-    }
+    while(update());
 
 	return true;
 }
@@ -136,7 +94,7 @@ void Application::fini()
 	glfwTerminate();
 }
 
-bool Application::draw()
+bool Application::update()
 {
 	auto start = std::chrono::high_resolution_clock::now();
 
@@ -152,6 +110,7 @@ bool Application::draw()
 		{
 			for(auto &go : mesh_to_go->second)
 			{
+                go->update();
 				material->use_model(go->transform.get_model());
 				mesh_to_go->first->draw();
 			}
@@ -168,13 +127,23 @@ bool Application::draw()
 	
 	return !m_is_quitting;
 }
-std::shared_ptr<IGameObject> Application::add_game_object(
-        const std::string &material_path, const std::string &light_path)
+template<class T>
+T get_value(nlohmann::basic_json<>& config, const char *name)
 {
-	std::shared_ptr<Material> material = ResourceLoader::instance().get_material(material_path);
+    auto iter = config.find(name);
+    if(iter == config.end())
+        return T{};
+    return *iter;
+}
+
+std::shared_ptr<GameObject> Application::add_game_object(nlohmann::basic_json<>& config)
+{
+    std::cout << config << std::endl;
+	std::shared_ptr<Material> material = ResourceLoader::instance().get_material(get_value<std::string>(config, "material"));
 	std::shared_ptr<Mesh> mesh = ResourceLoader::instance().get_mesh();
 	auto &mesh_to_go = m_game_objects[material];
-	auto &&go = std::shared_ptr<GameObject>(new GameObject());
+	auto &&go = std::shared_ptr<GameObject>(new GameObject(get_value<std::string>(config, "script")));
+    std::string light_path = get_value<std::string>(config, "light");
     if(!light_path.empty())
     {
         auto &&light = std::shared_ptr<Light>(new Light(light_path, go));
@@ -184,7 +153,7 @@ std::shared_ptr<IGameObject> Application::add_game_object(
 	return go;
 }
 
-ITransform &Application::get_camera_transform()
+Transform &Application::get_camera_transform()
 {
     return m_camera->transform();
 }
@@ -192,15 +161,15 @@ ITransform &Application::get_camera_transform()
 void Application::framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
-	if(Application::instance()->m_camera)
+	if(Application::instance().m_camera)
 	{
-		Application::instance()->m_camera->update_aspect(width, height);
+		Application::instance().m_camera->update_aspect(width, height);
 	}
 	auto monitor = glfwGetPrimaryMonitor();
 	if(!monitor)
 	{
-		Application::instance()->m_width = width;
-		Application::instance()->m_height = height;
+		Application::instance().m_width = width;
+		Application::instance().m_height = height;
 	}
 }
 
@@ -211,9 +180,9 @@ void Application::error_callback(int error, const char* description)
 
 void Application::mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-	if(Application::instance()->m_camera)
+	if(Application::instance().m_camera)
 	{
-		Application::instance()->m_camera->mouse(xpos, ypos);
+		Application::instance().m_camera->mouse(xpos, ypos);
 	}
 }
 

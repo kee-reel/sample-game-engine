@@ -27,7 +27,7 @@ void Light::apply(const std::shared_ptr<Shader> &shader, const std::string &pref
     }
 }
 
-std::string Light::parse_field(const std::string &type_str, const std::string &name, const std::string &value)
+std::string Light::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)
 {
     if(!name.compare("light_type"))
     {

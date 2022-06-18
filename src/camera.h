@@ -13,7 +13,7 @@ public:
 	const glm::vec3 &get_pos();
 	void use(std::shared_ptr<Shader> shader);
 	void update_aspect(int width, int height);
-	sge::ITransform &transform() { return m_transform; }
+	Transform &transform() { return m_transform; }
     void mouse(double xpos, double ypos);
     void move(glm::vec3 mov);
 

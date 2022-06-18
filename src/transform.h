@@ -2,28 +2,26 @@
 #define TRANSFORM_H_
 #include "shader.h"
 
-#include "sge.h"
-
-class Transform : public sge::ITransform
+class Transform
 {
 public:
 	Transform();
 	~Transform();
 	const glm::mat4 &get_model();
 
-	const glm::vec3& get_pos() override;
-	const glm::vec3& get_rot() override;
-	const glm::vec3& get_scale() override;
+	const glm::vec3& get_pos();
+	const glm::vec3& get_rot();
+	const glm::vec3& get_scale();
 
-	const glm::vec3& front() override;
-	const glm::vec3& up() override;
+	const glm::vec3& front();
+	const glm::vec3& up();
 
-	void set_pos(glm::vec3 pos) override;
-	void set_rot(glm::vec3 rot) override;
-	void set_scale(glm::vec3 scale) override;
+	void set_pos(glm::vec3 pos);
+	void set_rot(glm::vec3 rot);
+	void set_scale(glm::vec3 scale);
 
-	void move(glm::vec3 diff) override;
-	void rotate(glm::vec3 diff) override;
+	void move(glm::vec3 diff);
+	void rotate(glm::vec3 diff);
 
 private:
 	void recalc();

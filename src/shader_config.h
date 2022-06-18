@@ -4,6 +4,9 @@
 #include "texture.h"
 #include "shader.h"
 
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
+
 class ShaderConfig
 {
 	struct TextureWrapper
@@ -36,7 +39,7 @@ public:
 	void reload(bool force=true);
 
 protected:
-    virtual std::string parse_field(const std::string &type_str, const std::string &name, const std::string &value);
+    virtual std::string parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value);
     virtual void create_components(bool force);
     bool is_ok()
     {

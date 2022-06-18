@@ -3,7 +3,6 @@ add_definitions(
 	-DTW_NO_LIB_PRAGMA
 	-DTW_NO_DIRECT3D
 	-DGLEW_BUILD
-	-D_CRT_SECURE_NO_WARNINGS
 )
 
 ### GLFW ###
@@ -44,13 +43,23 @@ target_link_libraries( glew
 ### Lua ###
 
 add_subdirectory(lua)
-add_subdirectory(sol2)
 
+### Sol2 (Lua and C++ integration) ###
+
+add_subdirectory(sol2)
 
 ### Assimp ###
 
-#add_subdirectory( assimp-5.1.2 )
+add_subdirectory( assimp )
 
-#include_directories(
-#	assimp-5.1.2/include/
-#)
+include_directories(
+	assimp/include/
+)
+
+### Json ###
+
+add_subdirectory( json )
+
+include_directories(
+	json/include/
+)

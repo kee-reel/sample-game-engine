@@ -14,20 +14,19 @@ namespace sge
 typedef std::map<std::shared_ptr<Mesh>, std::vector<std::shared_ptr<GameObject>>> mesh_to_go_t;
 typedef std::map<std::shared_ptr<Material>, mesh_to_go_t> material_to_mesh_t;
 
-class Application : public IApplication
+class Application
 {
 public:
 	Application();
 	virtual ~Application();
-	bool init(int width, int height, std::string &&window_name, std::string main_path) override;
-	void fini() override;
-	bool draw() override;
-	std::shared_ptr<IGameObject> add_game_object(
-            const std::string &material_path, const std::string &light_path) override;
-    ITransform &get_camera_transform() override;
+	bool init(std::string config_path);
+	void fini();
+	bool update();
+	std::shared_ptr<GameObject> add_game_object(nlohmann::basic_json<>& config);
+    Transform &get_camera_transform();
+	static Application &instance();
 
 private:
-	static std::shared_ptr<Application> &instance();
 	static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 	static void error_callback(int error, const char* description);
 	static void mouse_callback(GLFWwindow* window, double xpos, double ypos);
@@ -38,6 +37,7 @@ private:
 	void toggle_fullscreen(bool enabled);
 
 private:
+    static Application s_instance;
 	GLFWwindow* m_window;
 	int m_width;
 	int m_height;
