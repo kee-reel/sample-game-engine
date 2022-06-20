@@ -122,6 +122,7 @@ bool Application::init(std::string config_path)
         std::cout << e.what() << std::endl;
     }
 
+    ResourceLoader::instance().set_base_path(config["assets_path"]);
     std::cout << "[OBJECTS]" << std::endl;
     auto objects = config["objects"];
     for(auto iter = objects.begin(); iter != objects.end(); iter++)
@@ -197,13 +198,12 @@ std::shared_ptr<GameObject> Application::add_game_object(
 
     if(!script_path.empty())
     {
-        m_scripts.push_back(std::make_shared<Script>(go, m_lua, script_path));
+        m_scripts.push_back(ResourceLoader::instance().get_script(go, m_lua, script_path));
     }
 
     if(!light_path.empty())
     {
-        auto &&light = std::shared_ptr<Light>(new Light(light_path, go));
-        m_lights.push_back(light);
+        m_lights.push_back(ResourceLoader::instance().get_light(go, light_path));
     }
 	return go;
 }

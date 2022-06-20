@@ -16,18 +16,20 @@ std::shared_ptr<Material> ResourceLoader::get_material(const std::string &path)
 	{
 		return iter->second;
 	}
-	std::shared_ptr<Material> material(new Material(path));
+	std::shared_ptr<Material> material(new Material(m_base_path + path));
 	m_materials[path] = material;
 	return material;
 }
 
-std::shared_ptr<Shader> ResourceLoader::get_shader(const std::vector<std::string> &paths, bool reload)
+std::shared_ptr<Shader> ResourceLoader::get_shader(const std::vector<std::string> &paths_, bool reload)
 {
 	size_t key;
 	std::hash<std::string> hasher;
-	for(const auto &path : paths)
+    std::vector<std::string> paths(paths_.size());
+	for(int i = 0; i < paths_.size(); i++)
 	{
-		key += hasher(path);
+		key += hasher(paths_[i]);
+        paths[i] = m_base_path + paths_[i];
 	}
 
 	auto iter = m_shaders.find(key);
@@ -47,9 +49,21 @@ std::shared_ptr<Texture> ResourceLoader::get_texture(const std::string &path)
 	{
 		return iter->second;
 	}
-	std::shared_ptr<Texture> texture(new Texture(path));
+	std::shared_ptr<Texture> texture(new Texture(m_base_path + path));
 	m_textures[path] = texture;
 	return texture;
+}
+
+std::shared_ptr<Light> ResourceLoader::get_light(std::shared_ptr<GameObject> game_object, const std::string &path)
+{
+	auto iter = m_lights.find(path);
+	if(iter != m_lights.end())
+	{
+		return iter->second;
+	}
+	std::shared_ptr<Light> light(new Light(m_base_path + path, game_object));
+	m_lights[path] = light;
+	return light;
 }
 
 std::shared_ptr<Mesh> ResourceLoader::get_mesh()
@@ -63,9 +77,24 @@ std::shared_ptr<Mesh> ResourceLoader::get_mesh()
 	return mesh;
 }
 
+std::shared_ptr<Script> ResourceLoader::get_script(std::shared_ptr<GameObject> game_object, sol::state_view lua, const std::string &path)
+{
+	auto iter = m_scripts.find(path);
+	if(iter != m_scripts.end())
+	{
+		return iter->second;
+	}
+	return m_scripts[path] = std::make_shared<Script>(game_object, std::move(lua), m_base_path + path);
+}
+
 std::shared_ptr<Component> ResourceLoader::get_by_uid(unsigned long int uid)
 {
 	return m_components.find(uid)->second;
+}
+
+void ResourceLoader::set_base_path(const std::string &path)
+{
+    m_base_path = path;
 }
 
 void ResourceLoader::add_component(const std::shared_ptr<Component> component)
