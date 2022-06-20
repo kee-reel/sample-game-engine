@@ -14,6 +14,7 @@ public:
         MESH,
         TEXTURE,
         CAMERA,
+        SCRIPT,
     };
 
 	Component(Type type) :

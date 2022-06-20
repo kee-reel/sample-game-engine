@@ -76,14 +76,65 @@ bool Application::init(std::string config_path)
 
 	toggle_fullscreen(false);
 	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    auto clear_color = window_config["clear_color"];
+	glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
 	glEnable(GL_DEPTH_TEST);
 	m_camera.reset(new Camera(m_width, m_height));
 
+    try
+    {
+        m_lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math);
+        m_lua.new_usertype<Application>("app",
+            sol::constructors<>(),
+            "add_game_object", &Application::add_game_object
+        );
+        m_lua.new_usertype<glm::vec3>("vec3",
+            sol::constructors<glm::vec3(float,float,float)>(),
+            "x", &glm::vec3::x,
+            "y", &glm::vec3::y,
+            "z", &glm::vec3::z
+        );
+        m_lua.new_usertype<GameObject>("gameobject",
+            sol::constructors<>(),
+            "transform", sol::readonly(&GameObject::transform)
+        );
+        m_lua.new_usertype<Transform>("transform",
+            sol::constructors<>(),
+            "set_pos", &Transform::set_pos,
+            "set_rot", &Transform::set_rot,
+            "set_scale", &Transform::set_scale,
+
+            "get_pos", &Transform::get_pos,
+            "get_rot", &Transform::get_rot,
+            "get_scale", &Transform::get_scale,
+
+            "rotate", &Transform::rotate,
+            "move", &Transform::move,
+
+            "front", &Transform::front,
+            "up", &Transform::up
+        );
+        m_lua["app"] = this;
+
+    }
+    catch(std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
+
+    std::cout << "[OBJECTS]" << std::endl;
     auto objects = config["objects"];
     for(auto iter = objects.begin(); iter != objects.end(); iter++)
-        add_game_object(iter.value());
+    {
+        auto &&object_config = iter.value();
+        add_game_object(
+            get_value<std::string>(object_config, "material"),
+            get_value<std::string>(object_config, "script"),
+            get_value<std::string>(object_config, "light")
+        );
+    }
 
+    std::cout << "[UPDATE]" << std::endl;
     while(update());
 
 	return true;
@@ -100,9 +151,12 @@ bool Application::update()
 
 	handle_controls();
 
+    for(auto iter = m_scripts.begin(); iter != m_scripts.end(); iter++)
+        (*iter)->update();
+
 	// Draw calls
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	for(auto material_to_mesh = m_game_objects.begin(); material_to_mesh != m_game_objects.end(); material_to_mesh++)
+	for(auto material_to_mesh = m_material_to_mesh.begin(); material_to_mesh != m_material_to_mesh.end(); material_to_mesh++)
 	{
         auto &&material = material_to_mesh->first;
 		material->use(m_camera, m_lights);
@@ -110,7 +164,6 @@ bool Application::update()
 		{
 			for(auto &go : mesh_to_go->second)
 			{
-                go->update();
 				material->use_model(go->transform.get_model());
 				mesh_to_go->first->draw();
 			}
@@ -127,29 +180,31 @@ bool Application::update()
 	
 	return !m_is_quitting;
 }
-template<class T>
-T get_value(nlohmann::basic_json<>& config, const char *name)
-{
-    auto iter = config.find(name);
-    if(iter == config.end())
-        return T{};
-    return *iter;
-}
 
-std::shared_ptr<GameObject> Application::add_game_object(nlohmann::basic_json<>& config)
+std::shared_ptr<GameObject> Application::add_game_object(
+        std::string &&material_path, std::string &&script_path, std::string &&light_path)
 {
-    std::cout << config << std::endl;
-	std::shared_ptr<Material> material = ResourceLoader::instance().get_material(get_value<std::string>(config, "material"));
-	std::shared_ptr<Mesh> mesh = ResourceLoader::instance().get_mesh();
-	auto &mesh_to_go = m_game_objects[material];
-	auto &&go = std::shared_ptr<GameObject>(new GameObject(get_value<std::string>(config, "script")));
-    std::string light_path = get_value<std::string>(config, "light");
+	auto &&go = std::shared_ptr<GameObject>(new GameObject());
+    m_game_objects[go->uid] = go;
+
+    if(!material_path.empty())
+    {
+        std::shared_ptr<Material> material = ResourceLoader::instance().get_material(material_path);
+        std::shared_ptr<Mesh> mesh = ResourceLoader::instance().get_mesh();
+        auto &mesh_to_go = m_material_to_mesh[material];
+        mesh_to_go[mesh].push_back(go);
+    }
+
+    if(!script_path.empty())
+    {
+        m_scripts.push_back(std::make_shared<Script>(go, m_lua, script_path));
+    }
+
     if(!light_path.empty())
     {
         auto &&light = std::shared_ptr<Light>(new Light(light_path, go));
         m_lights.push_back(light);
     }
-	mesh_to_go[mesh].push_back(go);
 	return go;
 }
 
@@ -203,7 +258,7 @@ void Application::handle_controls()
 
 	if(is_key_pressed(GLFW_KEY_R))
 	{
-        for(auto material_to_mesh = m_game_objects.begin(); material_to_mesh != m_game_objects.end(); material_to_mesh++)
+        for(auto material_to_mesh = m_material_to_mesh.begin(); material_to_mesh != m_material_to_mesh.end(); material_to_mesh++)
         {
             material_to_mesh->first->reload();
             for(auto mesh_to_go = material_to_mesh->second.begin(); mesh_to_go != material_to_mesh->second.end(); mesh_to_go++)

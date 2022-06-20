@@ -4,9 +4,12 @@
 #include "material.h"
 #include "mesh.h"
 #include "light.h"
+#include "script.h"
 #include "game_object.h"
 
 #include "sge.h"
+
+#include <sol/sol.hpp>
 
 namespace sge
 {
@@ -22,7 +25,8 @@ public:
 	bool init(std::string config_path);
 	void fini();
 	bool update();
-	std::shared_ptr<GameObject> add_game_object(nlohmann::basic_json<>& config);
+	std::shared_ptr<GameObject> add_game_object(
+            std::string &&material_path, std::string &&script_path, std::string &&light_path);
     Transform &get_camera_transform();
 	static Application &instance();
 
@@ -49,8 +53,11 @@ private:
 	std::chrono::duration<float, std::milli> m_frame_duration, m_dt;
 
 	std::shared_ptr<Camera> m_camera;
-	material_to_mesh_t m_game_objects;
+	material_to_mesh_t m_material_to_mesh;
+    std::map<uint64_t, std::shared_ptr<GameObject>> m_game_objects;
+    std::list<std::shared_ptr<Script>> m_scripts;
     std::list<std::shared_ptr<Light>> m_lights;
+    sol::state m_lua;
 };
 
 };
