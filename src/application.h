@@ -4,7 +4,7 @@
 #include "material.h"
 #include "mesh.h"
 #include "light.h"
-#include "script.h"
+#include "script_state.h"
 #include "game_object.h"
 
 #include "sge.h"
@@ -55,7 +55,7 @@ private:
 	std::shared_ptr<Camera> m_camera;
 	material_to_mesh_t m_material_to_mesh;
     std::map<uint64_t, std::shared_ptr<GameObject>> m_game_objects;
-    std::list<std::shared_ptr<Script>> m_scripts;
+    std::list<std::shared_ptr<ScriptState>> m_scripts;
     std::list<std::shared_ptr<Light>> m_lights;
     sol::state m_lua;
 };

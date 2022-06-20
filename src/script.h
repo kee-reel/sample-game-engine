@@ -6,25 +6,25 @@
 
 #include <sol/sol.hpp>
 
-
 class Script : public Component
 {
 public:
-    Script(std::shared_ptr<GameObject> game_object, sol::state_view lua, std::string script_path) :
+    Script(sol::state_view lua, std::string path) :
         Component(Component::SCRIPT),
-        m_game_object(std::move(game_object)),
-        m_script_path(script_path),
-        m_lua(std::move(lua)),
-        m_env(m_lua, sol::create, m_lua.globals())
+        m_path(path),
+        m_lua(std::move(lua))
     {
-        if(m_script_path.empty())
+        if(m_path.empty())
             throw std::runtime_error("empty filename");
         load_script();
     }
 
-    void update()
+    sol::environment make_env()
     {
-        m_env["update"]();
+        const std::string_view source = m_bytecode->as_string_view();
+        sol::environment env(m_lua, sol::create, m_lua.globals());
+        const sol::protected_function_result load_res = m_lua.safe_script(source, env);
+        return env;
     }
 
 private:
@@ -32,8 +32,9 @@ private:
     {
         try
         {
-            m_env["self"] = m_game_object;
-            m_lua.script_file(m_script_path, m_env);
+            const sol::load_result target = m_lua.load_file(m_path);
+            const sol::protected_function bytecode = target.get<sol::protected_function>();
+            m_bytecode = std::make_unique<sol::bytecode>(bytecode.dump());
         }
         catch(std::exception& e)
         {
@@ -42,9 +43,8 @@ private:
     }
 
 private:
-    std::shared_ptr<GameObject> m_game_object;
-    std::string m_script_path;
+    std::string m_path;
     sol::state_view m_lua;
-    sol::environment m_env;
+    std::unique_ptr<sol::bytecode> m_bytecode;
 };
 #endif

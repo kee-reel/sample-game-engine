@@ -77,14 +77,14 @@ std::shared_ptr<Mesh> ResourceLoader::get_mesh()
 	return mesh;
 }
 
-std::shared_ptr<Script> ResourceLoader::get_script(std::shared_ptr<GameObject> game_object, sol::state_view lua, const std::string &path)
+std::shared_ptr<Script> ResourceLoader::get_script(sol::state_view lua, const std::string &path)
 {
 	auto iter = m_scripts.find(path);
 	if(iter != m_scripts.end())
 	{
 		return iter->second;
 	}
-	return m_scripts[path] = std::make_shared<Script>(game_object, std::move(lua), m_base_path + path);
+	return m_scripts[path] = std::make_shared<Script>(std::move(lua), m_base_path + path);
 }
 
 std::shared_ptr<Component> ResourceLoader::get_by_uid(unsigned long int uid)

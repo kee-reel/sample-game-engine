@@ -198,7 +198,8 @@ std::shared_ptr<GameObject> Application::add_game_object(
 
     if(!script_path.empty())
     {
-        m_scripts.push_back(ResourceLoader::instance().get_script(go, m_lua, script_path));
+        auto script = ResourceLoader::instance().get_script(m_lua, script_path);
+        m_scripts.push_back(std::make_shared<ScriptState>(go, script));
     }
 
     if(!light_path.empty())

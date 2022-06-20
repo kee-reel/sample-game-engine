@@ -45,6 +45,7 @@ set( HEADERS
 	src/component.h
 	src/game_object.h
 	src/script.h
+	src/script_state.h
 	src/mesh.h
 	src/shader.h
 	src/texture.h

@@ -17,7 +17,7 @@ public:
 	std::shared_ptr<Shader> get_shader(const std::vector<std::string> &path, bool reload);
 	std::shared_ptr<Texture> get_texture(const std::string &path);	
 	std::shared_ptr<Light> get_light(std::shared_ptr<GameObject> game_object, const std::string &path);
-	std::shared_ptr<Script> get_script(std::shared_ptr<GameObject> game_object, sol::state_view lua, const std::string &script);	
+	std::shared_ptr<Script> get_script(sol::state_view lua, const std::string &script);	
 	std::shared_ptr<Mesh> get_mesh();
 	std::shared_ptr<Component> get_by_uid(unsigned long int uid);
 	void set_base_path(const std::string &path);
