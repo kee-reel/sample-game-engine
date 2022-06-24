@@ -1,25 +1,13 @@
-#include "camera.h"
+#include "controls.h"
 
 #include "includes.h"
 #include "util.h"
 
-#include <glm/gtc/matrix_transform.hpp>
-
-Camera::Camera(int width, int height) :
+Controls::Controls(std::weak_ptr<Entity> &&entity) :
+    Component(std::move(entity)),
 	m_mouse_inited(false)
 {
-	update_aspect(width, height);
 	recalc();
-}
-
-glm::vec3 Camera::get_pos()
-{
-	return m_transform.get_pos();
-}
-
-glm::mat4 Camera::get_view()
-{
-	return m_view;
 }
 
 void Camera::mouse(double xpos, double ypos)
@@ -40,7 +28,9 @@ void Camera::mouse(double xpos, double ypos)
 	xoffset *= sensitivity;
 	yoffset *= sensitivity;
 
-    auto &&rot = m_transform.get_rot();
+    auto entity = m_entity.lock();
+    auto transform = entity->get_component<Transform>().lock();
+    auto &&rot = transform->get_rot();
 	if(rot.x + xoffset > 89.0f || rot.x + xoffset < -89.0f)
         xoffset = 0;
     m_transform.rotate({yoffset, xoffset, 0});

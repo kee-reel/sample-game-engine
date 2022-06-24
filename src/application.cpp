@@ -1,3 +1,7 @@
+#include <latch>
+#include <barrier>
+#include <thread>
+
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
@@ -5,6 +9,8 @@ using json = nlohmann::json;
 
 #include "includes.h"
 #include "util.h"
+#include "ECS/transform.h"
+#include "ECS/render.h"
 
 namespace sge
 {
@@ -81,41 +87,52 @@ bool Application::init(std::string config_path)
 	glEnable(GL_DEPTH_TEST);
 	m_camera.reset(new Camera(m_width, m_height));
 
+    auto threads_count = std::thread::hardware_concurrency();
+    std::cout << threads_count << " concurrent threads are supported.\n";
+    if(threads_count >= 2)
+        threads_count--;
+    m_scripts.reserve(threads_count);
+    m_scripts_pool_selector = m_scripts.begin();
     try
     {
-        m_lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math);
-        m_lua.new_usertype<Application>("app",
-            sol::constructors<>(),
-            "add_game_object", &Application::add_game_object
-        );
-        m_lua.new_usertype<glm::vec3>("vec3",
-            sol::constructors<glm::vec3(float,float,float)>(),
-            "x", &glm::vec3::x,
-            "y", &glm::vec3::y,
-            "z", &glm::vec3::z
-        );
-        m_lua.new_usertype<GameObject>("gameobject",
-            sol::constructors<>(),
-            "transform", sol::readonly(&GameObject::transform)
-        );
-        m_lua.new_usertype<Transform>("transform",
-            sol::constructors<>(),
-            "set_pos", &Transform::set_pos,
-            "set_rot", &Transform::set_rot,
-            "set_scale", &Transform::set_scale,
+        for(int i = 0; i < threads_count; i++)
+        {
+            auto data = std::make_shared<ScriptPool>(std::make_pair(sol::state(), std::make_shared<ScriptStates>()));
+            auto &lua = data->first;
+            lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math);
+            lua.new_usertype<Application>("app",
+                sol::constructors<>(),
+                "add_game_object", &Application::add_game_object
+            );
+            lua.new_usertype<glm::vec3>("vec3",
+                sol::constructors<glm::vec3(float,float,float)>(),
+                "x", &glm::vec3::x,
+                "y", &glm::vec3::y,
+                "z", &glm::vec3::z
+            );
+            lua.new_usertype<GameObject>("gameobject",
+                sol::constructors<>(),
+                "transform", sol::readonly(&GameObject::transform)
+            );
+            lua.new_usertype<Transform>("transform",
+                sol::constructors<>(),
+                "set_pos", &Transform::set_pos,
+                "set_rot", &Transform::set_rot,
+                "set_scale", &Transform::set_scale,
 
-            "get_pos", &Transform::get_pos,
-            "get_rot", &Transform::get_rot,
-            "get_scale", &Transform::get_scale,
+                "get_pos", &Transform::get_pos,
+                "get_rot", &Transform::get_rot,
+                "get_scale", &Transform::get_scale,
 
-            "rotate", &Transform::rotate,
-            "move", &Transform::move,
+                "rotate", &Transform::rotate,
+                "move", &Transform::move,
 
-            "front", &Transform::front,
-            "up", &Transform::up
-        );
-        m_lua["app"] = this;
-
+                "front", &Transform::front,
+                "up", &Transform::up
+            );
+            lua["app"] = this;
+            m_scripts.push_back(std::move(data));
+        }
     }
     catch(std::exception& e)
     {
@@ -136,7 +153,14 @@ bool Application::init(std::string config_path)
     }
 
     std::cout << "[UPDATE]" << std::endl;
-    while(update());
+    try
+    {
+        start();
+    }
+    catch(std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 
 	return true;
 }
@@ -146,45 +170,79 @@ void Application::fini()
 	glfwTerminate();
 }
 
-bool Application::update()
+void Application::start()
 {
-	auto start = std::chrono::high_resolution_clock::now();
+    int threads_count = m_scripts.size() + 1;
+    std::latch sync_exit(threads_count);
+    auto start = std::chrono::high_resolution_clock::now();
+    std::barrier sync_barrier(threads_count, [&](){
+        // Sleep to sustain FPS
+        auto time_passed = std::chrono::high_resolution_clock::now() - start;
+        if(m_frame_duration > time_passed)
+            std::this_thread::sleep_for(m_frame_duration - time_passed);
+        m_dt = (start - m_prev_time) / 1000.f;
+        std::cout << m_dt << std::endl;
+        m_prev_time = start;
+        start = std::chrono::high_resolution_clock::now();
+    });
 
-	handle_controls();
-
+    std::vector<std::thread> script_threads;
+    script_threads.reserve(m_scripts.size());
     for(auto iter = m_scripts.begin(); iter != m_scripts.end(); iter++)
-        (*iter)->update();
+    {
+        std::cout << "Create scripts pool for " << (*iter)->second->size() << std::endl;
+        script_threads.emplace_back([&](std::shared_ptr<ScriptPool> pool){
+            auto scripts = pool->second;
+            while(!m_is_quitting.load())
+            {
+                for(auto iter = scripts->begin(); iter != scripts->end(); iter++)
+                    (*iter)->update();
+                std::cout << "S";
+                sync_barrier.arrive_and_wait();
+            }
+            std::cout << "Exit" << std::endl;
+            sync_barrier.arrive();
+            sync_exit.arrive_and_wait();
+        }, *iter);
+    }
 
-	// Draw calls
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	for(auto material_to_mesh = m_material_to_mesh.begin(); material_to_mesh != m_material_to_mesh.end(); material_to_mesh++)
-	{
-        auto &&material = material_to_mesh->first;
-		material->use(m_camera, m_lights);
-		for(auto mesh_to_go = material_to_mesh->second.begin(); mesh_to_go != material_to_mesh->second.end(); mesh_to_go++)
-		{
-			for(auto &go : mesh_to_go->second)
-			{
-				material->use_model(go->transform.get_model());
-				mesh_to_go->first->draw();
-			}
-		}
-	}
-	glfwSwapBuffers(m_window);
+    while(!m_is_quitting.load())
+    {
+        handle_controls();
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        for(auto material_to_mesh = m_material_to_mesh.begin(); material_to_mesh != m_material_to_mesh.end(); material_to_mesh++)
+        {
+            auto &&material = material_to_mesh->first;
+            material->use(m_camera, m_lights);
+            for(auto mesh_to_go = material_to_mesh->second.begin(); mesh_to_go != material_to_mesh->second.end(); mesh_to_go++)
+            {
+                for(auto &go : mesh_to_go->second)
+                {
+                    material->use_model(go->transform.get_model());
+                    mesh_to_go->first->draw();
+                }
+            }
+        }
+        glfwSwapBuffers(m_window);
+        std::cout << "R";
+        sync_barrier.arrive_and_wait();
+    }
+    std::cout << "Exit" << std::endl;
+    sync_barrier.arrive();
+    sync_exit.arrive_and_wait();
 
-	// Sleep to sustain FPS
-	auto time_passed = std::chrono::high_resolution_clock::now() - start;
-	if(m_frame_duration > time_passed)
-		std::this_thread::sleep_for(m_frame_duration - time_passed);
-	m_dt = (start - m_prev_time) / 1000.f;
-	m_prev_time = start;
-	
-	return !m_is_quitting;
+    for (auto& thread : script_threads) {
+        std::cout << "Join" << std::endl;
+        thread.join();
+    }
 }
 
 std::shared_ptr<GameObject> Application::add_game_object(
         std::string &&material_path, std::string &&script_path, std::string &&light_path)
 {
+    auto entity = m_ecs.add_entity();
+    m_ecs.add_component<ecs::Transform>(entity);
+
 	auto &&go = std::shared_ptr<GameObject>(new GameObject());
     m_game_objects[go->uid] = go;
 
@@ -194,12 +252,18 @@ std::shared_ptr<GameObject> Application::add_game_object(
         std::shared_ptr<Mesh> mesh = ResourceLoader::instance().get_mesh();
         auto &mesh_to_go = m_material_to_mesh[material];
         mesh_to_go[mesh].push_back(go);
+
+        m_ecs.add_component<ecs::Render>(entity, material, mesh);
     }
 
     if(!script_path.empty())
     {
-        auto script = ResourceLoader::instance().get_script(m_lua, script_path);
-        m_scripts.push_back(std::make_shared<ScriptState>(go, script));
+        (*m_scripts_pool_selector)->second->push_back(
+                std::make_shared<ScriptState>(
+                    go, (*m_scripts_pool_selector)->first, ResourceLoader::instance().get_script(script_path)));
+        m_scripts_pool_selector++;
+        if(m_scripts_pool_selector == m_scripts.end())
+            m_scripts_pool_selector = m_scripts.begin();
     }
 
     if(!light_path.empty())
@@ -252,9 +316,9 @@ void Application::handle_controls()
 	glfwPollEvents();
 
 	bool is_fullscreen = glfwGetWindowMonitor(m_window) != nullptr;
-	m_is_quitting = (!is_fullscreen && is_key_pressed(GLFW_KEY_ESCAPE)) || glfwWindowShouldClose(m_window); 
+	m_is_quitting.store((!is_fullscreen && is_key_pressed(GLFW_KEY_ESCAPE)) || glfwWindowShouldClose(m_window));
 
-	if(m_is_quitting)
+	if(m_is_quitting.load())
 		return;
 
 	if(is_key_pressed(GLFW_KEY_R))

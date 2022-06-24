@@ -34,11 +34,11 @@ void Material::use(const std::shared_ptr<Camera> &camera, const std::list<std::s
 	m_shader->set_mat4("view", camera->get_view());
 }
 
-void Material::use_model(const glm::mat4 &model)
+void Material::use_model(glm::mat4 &&model)
 {
 	if(!is_ok())
 		return;
-	m_shader->set_mat4("model", model);
+	m_shader->set_mat4("model", std::move(model));
 }
 
 std::string Material::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)

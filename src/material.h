@@ -15,7 +15,7 @@ public:
     virtual ~Material() {}
 
 	void use(const std::shared_ptr<Camera> &camera, const std::list<std::shared_ptr<Light>> &lights);
-	void use_model(const glm::mat4 &mat);
+	void use_model(glm::mat4 &&mat);
 
 private:
     std::string parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value) override;

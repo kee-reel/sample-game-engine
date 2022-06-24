@@ -56,6 +56,12 @@ set( HEADERS
 	src/shader_config.h
 	src/util.h
 	src/includes.h
+
+    src/ECS/ecs.h
+    src/ECS/entity.h
+    src/ECS/component.h
+    src/ECS/transform.h
+    src/ECS/render.h
 )
 
 set( SOURCES
@@ -70,6 +76,12 @@ set( SOURCES
 	src/light.cpp
 	src/shader_config.cpp
 	src/util.cpp
+
+    src/ECS/ecs.cpp
+    src/ECS/entity.cpp
+    src/ECS/component.cpp
+    src/ECS/transform.cpp
+    src/ECS/render.cpp
 )
 
 include(GenerateExportHeader)

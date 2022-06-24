@@ -9,42 +9,34 @@
 class Script : public Component
 {
 public:
-    Script(sol::state_view lua, std::string path) :
+    Script(std::string path) :
         Component(Component::SCRIPT),
-        m_path(path),
-        m_lua(std::move(lua))
+        m_path(path)
     {
         if(m_path.empty())
             throw std::runtime_error("empty filename");
-        load_script();
     }
 
-    sol::environment make_env()
+    sol::environment make_env(sol::state_view &lua)
     {
+        if(!m_bytecode)
+            load_script(lua);
         const std::string_view source = m_bytecode->as_string_view();
-        sol::environment env(m_lua, sol::create, m_lua.globals());
-        const sol::protected_function_result load_res = m_lua.safe_script(source, env);
+        sol::environment env(lua, sol::create, lua.globals());
+        const sol::protected_function_result load_res = lua.safe_script(source, env);
         return env;
     }
 
 private:
-    void load_script()
+    void load_script(sol::state_view &lua)
     {
-        try
-        {
-            const sol::load_result target = m_lua.load_file(m_path);
-            const sol::protected_function bytecode = target.get<sol::protected_function>();
-            m_bytecode = std::make_unique<sol::bytecode>(bytecode.dump());
-        }
-        catch(std::exception& e)
-        {
-            std::cout << e.what() << std::endl;
-        }
+        const sol::load_result target = lua.load_file(m_path);
+        const sol::protected_function bytecode = target.get<sol::protected_function>();
+        m_bytecode = std::make_unique<sol::bytecode>(bytecode.dump());
     }
 
 private:
     std::string m_path;
-    sol::state_view m_lua;
     std::unique_ptr<sol::bytecode> m_bytecode;
 };
 #endif

@@ -9,8 +9,8 @@ class Camera
 {
 public:
 	Camera(int width, int height);
-	const glm::mat4 &get_view();
-	const glm::vec3 &get_pos();
+	glm::mat4 get_view();
+	glm::vec3 get_pos();
 	void use(std::shared_ptr<Shader> shader);
 	void update_aspect(int width, int height);
 	Transform &transform() { return m_transform; }

@@ -1,11 +1,15 @@
-#ifndef TRANSFORM_H_
-#define TRANSFORM_H_
-#include "shader.h"
+#ifndef ECS_TRANSFORM_H_
+#define ECS_TRANSFORM_H_
 
-class Transform
+#include "component.h"
+
+namespace ecs
+{
+
+class Transform : public Component
 {
 public:
-	Transform();
+	Transform(std::weak_ptr<Entity> &&entity);
 	~Transform();
 	glm::mat4 get_model() const;
 
@@ -27,7 +31,6 @@ private:
 	void recalc();
 
 private:
-    mutable std::mutex m_mutex;
 	glm::mat4 m_model;
 
 	glm::vec3 m_pos;
@@ -37,5 +40,7 @@ private:
 	glm::vec3 m_front;
 	glm::vec3 m_up = {0.0f, 1.0f, 0.0f};
 	glm::vec3 m_right = {1.0f, 0.0f, 0.0f};
+};
+
 };
 #endif
