@@ -45,7 +45,7 @@ set( HEADERS
 	src/component.h
 	src/game_object.h
 	src/script.h
-	src/script_state.h
+    #src/script_state.h
 	src/mesh.h
 	src/shader.h
 	src/texture.h
@@ -56,12 +56,17 @@ set( HEADERS
 	src/shader_config.h
 	src/util.h
 	src/includes.h
+	src/tick_limiter.h
 
     src/ECS/ecs.h
     src/ECS/entity.h
     src/ECS/component.h
     src/ECS/transform.h
     src/ECS/render.h
+    src/ECS/script.h
+    src/ECS/system.h
+    src/ECS/render_system.h
+    src/ECS/script_system.h
 )
 
 set( SOURCES
@@ -82,6 +87,7 @@ set( SOURCES
     src/ECS/component.cpp
     src/ECS/transform.cpp
     src/ECS/render.cpp
+    src/ECS/script.cpp
 )
 
 include(GenerateExportHeader)

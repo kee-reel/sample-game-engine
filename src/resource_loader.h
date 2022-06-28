@@ -9,10 +9,12 @@
 #include "mesh.h"
 #include "script.h"
 
-class ResourceLoader
+namespace res
+{
+class Loader
 {
 public:
-	static ResourceLoader &instance();
+	static Loader &instance();
 	std::shared_ptr<Material> get_material(const std::string &path);	
 	std::shared_ptr<Shader> get_shader(const std::vector<std::string> &path, bool reload);
 	std::shared_ptr<Texture> get_texture(const std::string &path);	
@@ -35,5 +37,5 @@ private:
 	std::map<unsigned long int, std::shared_ptr<Component>> m_components;
     std::string m_base_path;
 };
-
+};
 #endif

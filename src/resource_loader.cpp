@@ -2,14 +2,16 @@
 
 #include "resource_loader.h"
 
-ResourceLoader g_res_loader;
+namespace res
+{
+Loader g_res_loader;
 
-ResourceLoader &ResourceLoader::instance()
+Loader &Loader::instance()
 {
 	return g_res_loader;
 }
 
-std::shared_ptr<Material> ResourceLoader::get_material(const std::string &path)
+std::shared_ptr<Material> Loader::get_material(const std::string &path)
 {
 	auto iter = m_materials.find(path);
 	if(iter != m_materials.end())
@@ -21,7 +23,7 @@ std::shared_ptr<Material> ResourceLoader::get_material(const std::string &path)
 	return material;
 }
 
-std::shared_ptr<Shader> ResourceLoader::get_shader(const std::vector<std::string> &paths_, bool reload)
+std::shared_ptr<Shader> Loader::get_shader(const std::vector<std::string> &paths_, bool reload)
 {
 	size_t key;
 	std::hash<std::string> hasher;
@@ -42,7 +44,7 @@ std::shared_ptr<Shader> ResourceLoader::get_shader(const std::vector<std::string
 	return shader;
 }
 
-std::shared_ptr<Texture> ResourceLoader::get_texture(const std::string &path)
+std::shared_ptr<Texture> Loader::get_texture(const std::string &path)
 {
 	auto iter = m_textures.find(path);
 	if(iter != m_textures.end())
@@ -54,7 +56,7 @@ std::shared_ptr<Texture> ResourceLoader::get_texture(const std::string &path)
 	return texture;
 }
 
-std::shared_ptr<Light> ResourceLoader::get_light(std::shared_ptr<GameObject> game_object, const std::string &path)
+std::shared_ptr<Light> Loader::get_light(std::shared_ptr<GameObject> game_object, const std::string &path)
 {
 	auto iter = m_lights.find(path);
 	if(iter != m_lights.end())
@@ -66,7 +68,7 @@ std::shared_ptr<Light> ResourceLoader::get_light(std::shared_ptr<GameObject> gam
 	return light;
 }
 
-std::shared_ptr<Mesh> ResourceLoader::get_mesh()
+std::shared_ptr<Mesh> Loader::get_mesh()
 {
 	if(m_meshes.size())
 	{
@@ -77,7 +79,7 @@ std::shared_ptr<Mesh> ResourceLoader::get_mesh()
 	return mesh;
 }
 
-std::shared_ptr<Script> ResourceLoader::get_script(const std::string &path)
+std::shared_ptr<Script> Loader::get_script(const std::string &path)
 {
 	auto iter = m_scripts.find(path);
 	if(iter != m_scripts.end())
@@ -87,17 +89,18 @@ std::shared_ptr<Script> ResourceLoader::get_script(const std::string &path)
 	return m_scripts[path] = std::make_shared<Script>(m_base_path + path);
 }
 
-std::shared_ptr<Component> ResourceLoader::get_by_uid(unsigned long int uid)
+std::shared_ptr<Component> Loader::get_by_uid(unsigned long int uid)
 {
 	return m_components.find(uid)->second;
 }
 
-void ResourceLoader::set_base_path(const std::string &path)
+void Loader::set_base_path(const std::string &path)
 {
     m_base_path = path;
 }
 
-void ResourceLoader::add_component(const std::shared_ptr<Component> component)
+void Loader::add_component(const std::shared_ptr<Component> component)
 {
 	m_components[component->uid] = component;
 }
+};

@@ -87,7 +87,7 @@ void ShaderConfig::create_components(bool force)
 	m_textures.clear();
 	for(auto iter = m_temp_textures.begin(); iter != m_temp_textures.end(); ++iter)
 	{
-		auto texture = ResourceLoader::instance().get_texture(iter->second);
+		auto texture = res::Loader::instance().get_texture(iter->second);
 		m_textures.push_back(TextureWrapper({tex_i++, iter->first, texture}));
 	}
     m_temp_textures.clear();

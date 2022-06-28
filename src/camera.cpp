@@ -60,7 +60,9 @@ void Camera::update_aspect(int width, int height)
 
 void Camera::use(std::shared_ptr<Shader> shader)
 {
+	shader->set_mat4("view", m_view);
 	shader->set_mat4("projection", m_projection);
+	shader->set_vec3("viewPosition", m_transform.get_pos());
 }
 
 void Camera::recalc()

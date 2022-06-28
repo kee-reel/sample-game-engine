@@ -32,23 +32,22 @@ bool ECS::remove_entity(std::weak_ptr<Entity> entity)
     {
         auto component = entity_lock->get_component(iter->first);
         if(component)
-            iter->second.erase(component);
+            iter->second->erase(component);
     }
     return true;
 }
 void ECS::update(const std::shared_ptr<Camera> &camera, const std::list<std::shared_ptr<Light>> &lights)
 {
-    auto& renders = m_components[get_component_type<Render>()];
-    for(auto iter = renders.begin(); iter != renders.end(); iter++)
-    {
-        Render* render = static_cast<Render*>(*iter);
-        Transform* transform = static_cast<Transform*>(render->get_entity()->get_component<Transform>());
-        auto material = render->get_material();
-		material->use(camera, lights);
-        auto mesh = render->get_mesh();
-        material->use_model(transform->get_model());
-        mesh->draw();
-	}
+    for(auto iter = m_systems.begin(); iter != m_systems.end(); iter++)
+        iter->second->update();
+}
+
+std::shared_ptr<std::set<Component*>>& ECS::get_components(ComponentType type)
+{
+        auto& components = m_components[type];
+        if(!components)
+            components = std::make_shared<std::set<Component*>>();
+        return components;
 }
 
 };

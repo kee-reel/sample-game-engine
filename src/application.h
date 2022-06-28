@@ -1,5 +1,4 @@
 #include <atomic>
-
 #include <sol/sol.hpp>
 
 #include "includes.h"
@@ -8,7 +7,6 @@
 #include "material.h"
 #include "mesh.h"
 #include "light.h"
-#include "script_state.h"
 #include "game_object.h"
 
 #include "ECS/ecs.h"
@@ -21,8 +19,6 @@ namespace sge
 
 using mesh_to_go_t = std::map<std::shared_ptr<Mesh>, std::vector<std::shared_ptr<GameObject>>>;
 using material_to_mesh_t = std::map<std::shared_ptr<Material>, mesh_to_go_t>;
-using ScriptStates = std::list<std::shared_ptr<ScriptState>>;
-using ScriptPool = std::pair<sol::state, std::shared_ptr<ScriptStates>>;
 
 class Application
 {
@@ -56,14 +52,9 @@ private:
 	bool m_cursor_shown;
     std::atomic<bool> m_is_quitting;
 
-	std::chrono::high_resolution_clock::time_point m_prev_time;
-	std::chrono::duration<float, std::milli> m_frame_duration, m_dt;
-
 	std::shared_ptr<Camera> m_camera;
 	material_to_mesh_t m_material_to_mesh;
     std::map<uint64_t, std::shared_ptr<GameObject>> m_game_objects;
-    std::vector<std::shared_ptr<ScriptPool>>::iterator m_scripts_pool_selector;
-    std::vector<std::shared_ptr<ScriptPool>> m_scripts;
     std::list<std::shared_ptr<Light>> m_lights;
     ecs::ECS m_ecs;
 };

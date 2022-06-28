@@ -21,7 +21,7 @@ public:
 
 public:
 	Mesh();
-	void draw();
+	void draw(int instances_count = 1);
 	void reload();
 
 private:

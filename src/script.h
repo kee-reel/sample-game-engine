@@ -6,6 +6,8 @@
 
 #include <sol/sol.hpp>
 
+namespace res
+{
 class Script : public Component
 {
 public:
@@ -17,13 +19,13 @@ public:
             throw std::runtime_error("empty filename");
     }
 
-    sol::environment make_env(sol::state_view &lua)
+    std::unique_ptr<sol::environment> make_env(sol::state_view &lua)
     {
         if(!m_bytecode)
             load_script(lua);
         const std::string_view source = m_bytecode->as_string_view();
-        sol::environment env(lua, sol::create, lua.globals());
-        const sol::protected_function_result load_res = lua.safe_script(source, env);
+        auto&& env = std::make_unique<sol::environment>(lua, sol::create, lua.globals());
+        const sol::protected_function_result load_res = lua.safe_script(source, *env);
         return env;
     }
 
@@ -38,5 +40,6 @@ private:
 private:
     std::string m_path;
     std::unique_ptr<sol::bytecode> m_bytecode;
+};
 };
 #endif

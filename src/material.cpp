@@ -30,8 +30,6 @@ void Material::use(const std::shared_ptr<Camera> &camera, const std::list<std::s
             light->apply(m_shader, ss.str());
         }
     }
-	m_shader->set_vec3("viewPosition", camera->get_pos());
-	m_shader->set_mat4("view", camera->get_view());
 }
 
 void Material::use_model(glm::mat4 &&model)
@@ -57,7 +55,7 @@ std::string Material::parse_field(const std::string &type_str, const std::string
 
 void Material::create_components(bool force)
 {
-    m_shader = ResourceLoader::instance().get_shader(m_temp_shaders, force);
+    m_shader = res::Loader::instance().get_shader(m_temp_shaders, force);
     m_temp_shaders.clear();
 
     ShaderConfig::create_components(force);
