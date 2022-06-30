@@ -1,6 +1,3 @@
-#include "application.h"
-
-#include <functional>
 #include <latch>
 #include <barrier>
 #include <thread>
@@ -8,14 +5,13 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#include "application.h"
 #include "tick_limiter.h"
+
 #include "includes.h"
 #include "util.h"
-#include "ECS/transform.h"
-#include "ECS/render.h"
-#include "ECS/script.h"
-#include "ECS/render_system.h"
-#include "ECS/script_system.h"
+//#include "ECS/transform.h"
+//#include "ECS/render.h"
 
 namespace sge
 {
@@ -35,8 +31,6 @@ Application &Application::instance()
 Application::Application() :
 	m_is_quitting(false)
 {
-    m_ecs.add_system<ecs::Render, ecs::RenderSystem>();
-    m_ecs.add_system<ecs::Script, ecs::ScriptSystem>();
 }
 
 Application::~Application()
@@ -90,9 +84,60 @@ bool Application::init(std::string config_path)
 	glfwSetInputMode(m_window, GLFW_STICKY_KEYS, GL_TRUE);
     auto clear_color = window_config["clear_color"];
 	glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
-    glEnable(GL_CULL_FACE);  
 	glEnable(GL_DEPTH_TEST);
 	m_camera.reset(new Camera(m_width, m_height));
+
+    auto threads_count = std::thread::hardware_concurrency();
+    std::cout << threads_count << " concurrent threads are supported.\n";
+    if(threads_count >= 2)
+        threads_count--;
+    m_scripts.reserve(threads_count);
+    m_scripts_pool_selector = m_scripts.begin();
+    try
+    {
+        for(int i = 0; i < threads_count; i++)
+        {
+            auto data = std::make_shared<ScriptPool>(std::make_pair(sol::state(), std::make_shared<ScriptStates>()));
+            auto &lua = data->first;
+            lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math);
+            lua.new_usertype<Application>("app",
+                sol::constructors<>(),
+                "add_game_object", &Application::add_game_object
+            );
+            lua.new_usertype<glm::vec3>("vec3",
+                sol::constructors<glm::vec3(float,float,float)>(),
+                "x", &glm::vec3::x,
+                "y", &glm::vec3::y,
+                "z", &glm::vec3::z
+            );
+            lua.new_usertype<GameObject>("gameobject",
+                sol::constructors<>(),
+                "transform", sol::readonly(&GameObject::transform)
+            );
+            lua.new_usertype<Transform>("transform",
+                sol::constructors<>(),
+                "set_pos", &Transform::set_pos,
+                "set_rot", &Transform::set_rot,
+                "set_scale", &Transform::set_scale,
+
+                "get_pos", &Transform::get_pos,
+                "get_rot", &Transform::get_rot,
+                "get_scale", &Transform::get_scale,
+
+                "rotate", &Transform::rotate,
+                "move", &Transform::move,
+
+                "front", &Transform::front,
+                "up", &Transform::up
+            );
+            lua["app"] = this;
+            m_scripts.push_back(std::move(data));
+        }
+    }
+    catch(std::exception& e)
+    {
+        std::cout << e.what() << std::endl;
+    }
 
     res::Loader::instance().set_base_path(config["assets_path"]);
     std::cout << "[OBJECTS]" << std::endl;
@@ -127,18 +172,37 @@ void Application::fini()
 
 void Application::start()
 {
-    TickLimiter limiter(1000.f/60);
+    int threads_count = m_scripts.size();
+    auto start = std::chrono::high_resolution_clock::now();
+    std::barrier sync_barrier(threads_count, TickLimiter(1000/10.));
+
+    std::vector<std::thread> script_threads;
+    script_threads.reserve(threads_count);
+    for(auto iter = m_scripts.begin(); iter != m_scripts.end(); iter++)
+    {
+        std::cout << "Create scripts pool for " << (*iter)->second->size() << std::endl;
+        script_threads.emplace_back([&](std::shared_ptr<ScriptPool> pool){
+            auto scripts = pool->second;
+            while(!m_is_quitting.load())
+            {
+                for(auto iter = scripts->begin(); iter != scripts->end(); iter++)
+                    (*iter)->update();
+                sync_barrier.arrive_and_wait();
+            }
+            auto _ = sync_barrier.arrive();
+        }, *iter);
+    }
+
+    TickLimiter render_limit(1000/60.);
     int i = 0;
     while(!m_is_quitting.load())
     {
         handle_controls();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        m_ecs.update(m_camera, m_lights);
         for(auto material_to_mesh = m_material_to_mesh.begin(); material_to_mesh != m_material_to_mesh.end(); material_to_mesh++)
         {
             auto &&material = material_to_mesh->first;
             material->use(m_camera, m_lights);
-            continue;
             for(auto mesh_to_go = material_to_mesh->second.begin(); mesh_to_go != material_to_mesh->second.end(); mesh_to_go++)
             {
                 for(auto &go : mesh_to_go->second)
@@ -148,21 +212,21 @@ void Application::start()
                 }
             }
         }
+        i++;
         glfwSwapBuffers(m_window);
-        limiter();
-        if(i++ > 10)
-        {
-            i = 0;
-            std::cout << (limiter.dt() ? static_cast<int>(1000.0f / limiter.dt()) : 0) << " FPS" << std::endl;
-        }
+        render_limit();
+        std::cout << "FPS:" << (render_limit.dt() ? (1000 / render_limit.dt()) : 0) << std::endl;
+    }
+    for (auto& thread : script_threads) {
+        thread.join();
     }
 }
 
 std::shared_ptr<GameObject> Application::add_game_object(
         std::string &&material_path, std::string &&script_path, std::string &&light_path)
 {
-    auto entity = m_ecs.add_entity();
-    m_ecs.add_component<ecs::Transform>(entity);
+    //auto entity = m_ecs.add_entity();
+    //m_ecs.add_component<ecs::Transform>(entity);
 
 	auto &&go = std::shared_ptr<GameObject>(new GameObject());
     m_game_objects[go->uid] = go;
@@ -174,21 +238,17 @@ std::shared_ptr<GameObject> Application::add_game_object(
         auto &mesh_to_go = m_material_to_mesh[material];
         mesh_to_go[mesh].push_back(go);
 
-        m_ecs.add_component<ecs::Render>(entity, material, mesh);
+        //m_ecs.add_component<ecs::Render>(entity, material, mesh);
     }
 
     if(!script_path.empty())
     {
-        //(*m_scripts_pool_selector)->second->push_back(std::make_shared<ScriptState>(
-        //        go, 
-        //        (*m_scripts_pool_selector)->first, 
-        //        res::Loader::instance().get_script(script_path)
-        //));
-        //m_scripts_pool_selector++;
-        //if(m_scripts_pool_selector == m_scripts.end())
-        //    m_scripts_pool_selector = m_scripts.begin();
-
-        m_ecs.add_component<ecs::Script>(entity, res::Loader::instance().get_script(script_path));
+        (*m_scripts_pool_selector)->second->push_back(
+                std::make_shared<ScriptState>(
+                    go, (*m_scripts_pool_selector)->first, res::Loader::instance().get_script(script_path)));
+        m_scripts_pool_selector++;
+        if(m_scripts_pool_selector == m_scripts.end())
+            m_scripts_pool_selector = m_scripts.begin();
     }
 
     if(!light_path.empty())

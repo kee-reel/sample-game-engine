@@ -18,19 +18,19 @@ public:
         m_lua(std::move(lua)),
         m_env(m_script->make_env(m_lua))
     {
-        m_env["self"] = m_game_object;
-        m_env["init"]();
+        (*m_env)["self"] = m_game_object;
+        (*m_env)["init"]();
     }
 
     void update()
     {
-        m_env["update"]();
+        (*m_env)["update"]();
     }
 
 private:
     std::shared_ptr<GameObject> m_game_object;
     sol::state_view m_lua;
     std::shared_ptr<res::Script> m_script;
-    sol::environment m_env;
+    std::unique_ptr<sol::environment> m_env;
 };
 #endif

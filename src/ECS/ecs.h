@@ -2,13 +2,11 @@
 #define ECS_ECS_
 
 #include <set>
+#include <queue>
 
 #include "../includes.h"
 #include "entity.h"
 #include "system.h"
-
-class Camera;
-class Light;
 
 namespace ecs
 {
@@ -16,7 +14,7 @@ namespace ecs
 class ECS
 {
 public:
-    ECS();
+    ECS() = default;
 
     template<class ComponentT, class SystemT>
     void add_system()
@@ -24,39 +22,28 @@ public:
         auto type = get_component_type<ComponentT>();
         assert(m_systems.find(type) == m_systems.end());
         auto& components = get_components(type);
-        m_systems[type] = std::make_unique<SystemT>(components);
+        m_systems[type] = std::make_unique<SystemT>();
     }
 
-    std::shared_ptr<Entity> add_entity();
-    bool remove_entity(std::weak_ptr<Entity> entity);
+    EntityId add_entity();
 
-    template<class T, class... TArgs>
-    void add_component(std::weak_ptr<Entity> entity, TArgs&&... args)
+    template<class T, class Args...>
+    void add_component(EntityId id, Args &&args...)
     {
-        assert(!entity.expired());
-        auto entity_lock = entity.lock();
-        assert(!entity_lock->has_component<T>());
-
-        auto component = std::make_unique<T>(std::move(entity), std::forward<TArgs>(args)...);
-        auto id = component->id();
-        auto type = get_component_type<T>();
-
-        std::lock_guard<std::mutex> lock(m_mutex);
-        entity_lock->add_component<T>(std::move(component));
-        auto& components = get_components(type);
-        components->insert(entity_lock->get_component<T>());
+        Entity &ent = m_entities[id];
+        ComponentId id = generate_component_id();
+        ComponentType type = generate_component_type();
+        auto &components = m_components[type];
+        components[id] = std::make_unique<T>(std::forward<Args>(args)...);
+        ent[type] = id;
     }
 
-    void update(const std::shared_ptr<Camera> &camera, const std::list<std::shared_ptr<Light>> &lights);
+    void update();
 
 private:
-    std::shared_ptr<std::set<Component*>>& get_components(ComponentType type);
-
-private:
-    std::mutex m_mutex;
-    std::set<std::shared_ptr<Entity>> m_entities;
-    std::map<ComponentType, std::shared_ptr<std::set<Component*>>> m_components;
-    std::map<ComponentType, std::unique_ptr<System>> m_systems;
+    std::map<EntityId, Entity> m_entities;
+    std::map<ComponentType, std::map<ComponentId, std::unique_ptr<Component>>> m_components;
+    std::vector<std::unique_ptr<System>> m_systems;
 };
 
 };

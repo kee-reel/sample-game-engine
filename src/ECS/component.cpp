@@ -11,22 +11,7 @@ ComponentType generate_component_type()
 
 ComponentId generate_component_id()
 {
-    static ComponentId id = 0;
+    static ComponentId id = 1;
     return id++;
-}
-
-Component::Component(std::weak_ptr<Entity> &&entity) :
-    m_id(generate_component_id()),
-    m_entity(std::move(entity))
-{}
-
-ComponentId Component::id()
-{
-    return m_id;
-}
-
-std::shared_ptr<Entity> Component::get_entity()
-{
-    return m_entity.lock();
 }
 };

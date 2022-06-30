@@ -58,15 +58,15 @@ set( HEADERS
 	src/includes.h
 	src/tick_limiter.h
 
-    src/ECS/ecs.h
-    src/ECS/entity.h
-    src/ECS/component.h
-    src/ECS/transform.h
-    src/ECS/render.h
-    src/ECS/script.h
-    src/ECS/system.h
-    src/ECS/render_system.h
-    src/ECS/script_system.h
+    #    src/ECS/ecs.h
+    #    src/ECS/entity.h
+    #    src/ECS/component.h
+    #    src/ECS/transform.h
+    #    src/ECS/render.h
+    #    src/ECS/script.h
+    #    src/ECS/system.h
+    #    src/ECS/render_system.h
+    #    src/ECS/script_system.h
 )
 
 set( SOURCES
@@ -82,12 +82,12 @@ set( SOURCES
 	src/shader_config.cpp
 	src/util.cpp
 
-    src/ECS/ecs.cpp
-    src/ECS/entity.cpp
-    src/ECS/component.cpp
-    src/ECS/transform.cpp
-    src/ECS/render.cpp
-    src/ECS/script.cpp
+    #    src/ECS/ecs.cpp
+    #    src/ECS/entity.cpp
+    #    src/ECS/component.cpp
+    #    src/ECS/transform.cpp
+    #    src/ECS/render.cpp
+    #    src/ECS/script.cpp
 )
 
 include(GenerateExportHeader)

@@ -8,8 +8,9 @@
 #include "mesh.h"
 #include "light.h"
 #include "game_object.h"
+#include "script_state.h"
 
-#include "ECS/ecs.h"
+//#include "ECS/ecs.h"
 
 #include "sge.h"
 
@@ -19,7 +20,8 @@ namespace sge
 
 using mesh_to_go_t = std::map<std::shared_ptr<Mesh>, std::vector<std::shared_ptr<GameObject>>>;
 using material_to_mesh_t = std::map<std::shared_ptr<Material>, mesh_to_go_t>;
-
+using ScriptStates = std::list<std::shared_ptr<ScriptState>>;
+using ScriptPool = std::pair<sol::state, std::shared_ptr<ScriptStates>>;
 class Application
 {
 public:
@@ -56,7 +58,9 @@ private:
 	material_to_mesh_t m_material_to_mesh;
     std::map<uint64_t, std::shared_ptr<GameObject>> m_game_objects;
     std::list<std::shared_ptr<Light>> m_lights;
-    ecs::ECS m_ecs;
+    std::vector<std::shared_ptr<ScriptPool>>::iterator m_scripts_pool_selector;
+    std::vector<std::shared_ptr<ScriptPool>> m_scripts;
+    //ecs::ECS m_ecs;
 };
 
 };
