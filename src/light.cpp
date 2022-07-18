@@ -2,12 +2,13 @@
 
 #include "util.h"
 
+namespace sge
+{
+
 Light::Light(const std::string &path, std::shared_ptr<GameObject> game_object) :
-	Component(Component::LIGHT),
-    ShaderConfig(path),
     m_game_object(game_object)
 {
-    reload();
+    load(path);
 }
 
 void Light::apply(const std::shared_ptr<Shader> &shader, const std::string &prefix)
@@ -27,7 +28,7 @@ void Light::apply(const std::shared_ptr<Shader> &shader, const std::string &pref
     }
 }
 
-std::string Light::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)
+void Light::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)
 {
     if(!name.compare("light_type"))
     {
@@ -36,18 +37,18 @@ std::string Light::parse_field(const std::string &type_str, const std::string &n
         {
             std::ostringstream ss;
             ss << "Unknown light type \"" << value;
-            return ss.str();
+            throw std::runtime_error(ss.str());
         }
         m_temp_light_type = iter->second;
-        return "";
     }
     else
-        return ShaderConfig::parse_field(type_str, name, value);
+        ShaderConfig::parse_field(type_str, name, value);
 }
 
-void Light::create_components(bool force)
+void Light::create_components()
 {
     m_light_type = m_temp_light_type;
-
-    ShaderConfig::create_components(force);
+    ShaderConfig::create_components();
 }
+
+};

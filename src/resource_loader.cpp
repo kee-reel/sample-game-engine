@@ -2,7 +2,7 @@
 
 #include "resource_loader.h"
 
-namespace res
+namespace sge
 {
 Loader g_res_loader;
 
@@ -23,7 +23,7 @@ std::shared_ptr<Material> Loader::get_material(const std::string &path)
 	return material;
 }
 
-std::shared_ptr<Shader> Loader::get_shader(const std::vector<std::string> &paths_, bool reload)
+std::shared_ptr<Shader> Loader::get_shader(const std::vector<std::string> &paths_)
 {
 	size_t key;
 	std::hash<std::string> hasher;
@@ -35,7 +35,7 @@ std::shared_ptr<Shader> Loader::get_shader(const std::vector<std::string> &paths
 	}
 
 	auto iter = m_shaders.find(key);
-	if(iter != m_shaders.end() && !reload)
+	if(iter != m_shaders.end())
 	{
 		return iter->second;
 	}
@@ -68,15 +68,16 @@ std::shared_ptr<Light> Loader::get_light(std::shared_ptr<GameObject> game_object
 	return light;
 }
 
-std::shared_ptr<Mesh> Loader::get_mesh()
+std::shared_ptr<Model> Loader::get_model(const std::string &path, bool flip_uv)
 {
-	if(m_meshes.size())
+	auto iter = m_models.find(path);
+	if(iter != m_models.end())
 	{
-		return m_meshes.at(0);
+		return iter->second;
 	}
-	std::shared_ptr<Mesh> mesh(new Mesh());
-	m_meshes.push_back(mesh);
-	return mesh;
+	std::shared_ptr<Model> model = std::make_shared<Model>(m_base_path + path, flip_uv);
+	m_models[path] = model;
+	return model;
 }
 
 std::shared_ptr<Script> Loader::get_script(const std::string &path)
@@ -89,18 +90,8 @@ std::shared_ptr<Script> Loader::get_script(const std::string &path)
 	return m_scripts[path] = std::make_shared<Script>(m_base_path + path);
 }
 
-std::shared_ptr<Component> Loader::get_by_uid(unsigned long int uid)
-{
-	return m_components.find(uid)->second;
-}
-
 void Loader::set_base_path(const std::string &path)
 {
     m_base_path = path;
-}
-
-void Loader::add_component(const std::shared_ptr<Component> component)
-{
-	m_components[component->uid] = component;
 }
 };

@@ -2,9 +2,11 @@
 #define TEXTURE_H_
 
 #include "shader.h"
-#include "component.h"
 
-class Texture : public Component
+namespace sge
+{
+
+class Texture
 {
     struct TextureData
     {
@@ -33,5 +35,7 @@ private:
 	std::string m_path;
 	GLuint m_texture;
     std::unique_ptr<std::thread> m_thread;
+};
+
 };
 #endif

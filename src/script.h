@@ -2,17 +2,15 @@
 #define H_SCRIPT_
 #include "includes.h"
 
-#include "component.h"
-
 #include <sol/sol.hpp>
 
-namespace res
+namespace sge
 {
-class Script : public Component
+
+class Script
 {
 public:
     Script(std::string path) :
-        Component(Component::SCRIPT),
         m_path(path)
     {
         if(m_path.empty())
@@ -41,5 +39,6 @@ private:
     std::string m_path;
     std::unique_ptr<sol::bytecode> m_bytecode;
 };
+
 };
 #endif

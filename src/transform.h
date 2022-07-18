@@ -1,12 +1,18 @@
 #ifndef TRANSFORM_H_
 #define TRANSFORM_H_
+#include <mutex>
+
 #include "shader.h"
 
 class Transform
 {
 public:
-	Transform();
+	Transform(
+            const glm::vec3 &pos = glm::vec3{0., 0., 0.},
+            const glm::vec3 &rot = glm::vec3{0., 0., 0.},
+            const glm::vec3 &scale = glm::vec3{1., 1., 1.});
 	~Transform();
+    Transform& operator=(Transform &&other);
 	glm::mat4 get_model() const;
 
 	glm::vec3 get_pos() const;
@@ -35,7 +41,5 @@ private:
 	glm::vec3 m_scale;
 
 	glm::vec3 m_front;
-	glm::vec3 m_up = {0.0f, 1.0f, 0.0f};
-	glm::vec3 m_right = {1.0f, 0.0f, 0.0f};
 };
 #endif

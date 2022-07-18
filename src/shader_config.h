@@ -7,6 +7,9 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+namespace sge
+{
+
 class ShaderConfig
 {
 	struct TextureWrapper
@@ -32,23 +35,15 @@ class ShaderConfig
 	};
 
 public:
-	ShaderConfig(std::string path);
-    virtual ~ShaderConfig() {}
-
-	virtual void apply(const std::shared_ptr<Shader> &shader, const std::string &prefix="");
-	void reload(bool force=true);
+    void load(const std::string &path);
+    void load(json &&config);
+	void apply(const std::shared_ptr<Shader> &shader, const std::string &prefix="");
 
 protected:
-    virtual std::string parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value);
-    virtual void create_components(bool force);
-    bool is_ok()
-    {
-        return m_is_ok;
-    }
+    virtual void parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value);
+    virtual void create_components();
 
 private:
-	bool m_is_ok;
-	std::string m_path;
 	std::string m_prefix;
 
 	std::map<std::string, std::string> m_temp_textures;
@@ -58,5 +53,7 @@ private:
 	std::vector<TextureWrapper> m_textures;
 	std::map<std::string, glm::vec3> m_vectors;
 	std::map<std::string, float> m_floats;
+};
+
 };
 #endif

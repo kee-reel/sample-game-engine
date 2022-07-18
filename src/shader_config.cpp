@@ -8,16 +8,11 @@ using json = nlohmann::json;
 #include "resource_loader.h"
 #include "util.h"
 
-ShaderConfig::ShaderConfig(std::string path) :
-	m_is_ok(false),
-	m_path(path)
+namespace sge
 {
-}
 
 void ShaderConfig::apply(const std::shared_ptr<Shader> &shader, const std::string &prefix)
 {
-	if(!is_ok())
-		return;
 	shader->use();
 
 	for(const auto &t : m_textures)
@@ -28,43 +23,32 @@ void ShaderConfig::apply(const std::shared_ptr<Shader> &shader, const std::strin
 		shader->set_vec3(prefix + vec.first, vec.second);
 }
 
-void ShaderConfig::reload(bool force)
+void ShaderConfig::load(const std::string &path)
 {
-    std::ifstream f(m_path);
     json config;
-    f >> config;
-    f.close();
-
-    std::list<std::string> errors;
-    for(auto iter = config.begin(); iter != config.end(); iter++)
     {
-        for(auto v_iter = iter.value().begin(); v_iter != iter.value().end(); v_iter++)
-        {
-            auto err = parse_field(iter.key(), v_iter.key(), v_iter.value());
-            if(!err.empty())
-                errors.push_back(err);
-        }
+        std::ifstream f(path);
+        f >> config;
     }
-    if(errors.size())
-    {
-        std::cout << "Errors during shader processing:" << std::endl;
-        for(auto &e : errors)
-            std::cout << e << std::endl;
-        return;
-    }
-
-    create_components(force);
-	m_is_ok = true;
+    load(std::move(config));
 }
 
-std::string ShaderConfig::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)
+void ShaderConfig::load(json &&config)
+{
+    for(auto iter = config.begin(); iter != config.end(); iter++)
+        for(auto v_iter = iter.value().begin(); v_iter != iter.value().end(); v_iter++)
+            parse_field(iter.key(), v_iter.key(), v_iter.value());
+    create_components();
+}
+
+void ShaderConfig::parse_field(const std::string &type_str, const std::string &name, nlohmann::basic_json<>& value)
 {
     auto iter = s_name_to_field.find(type_str);
     if(iter == s_name_to_field.end())
     {
         std::ostringstream ss;
         ss << "Unknown field type " << type_str;
-        return ss.str();
+        throw std::runtime_error(ss.str());
     }
 
     switch(iter->second)
@@ -78,16 +62,15 @@ std::string ShaderConfig::parse_field(const std::string &type_str, const std::st
         case Field::FLOAT:
             m_temp_floats[name] = value;
     }
-    return "";
 }
 
-void ShaderConfig::create_components(bool force)
+void ShaderConfig::create_components()
 {
 	int tex_i = 0;
 	m_textures.clear();
 	for(auto iter = m_temp_textures.begin(); iter != m_temp_textures.end(); ++iter)
 	{
-		auto texture = res::Loader::instance().get_texture(iter->second);
+		auto texture = Loader::instance().get_texture(iter->second);
 		m_textures.push_back(TextureWrapper({tex_i++, iter->first, texture}));
 	}
     m_temp_textures.clear();
@@ -106,3 +89,5 @@ void ShaderConfig::create_components(bool force)
 	}
 	m_temp_floats.clear();
 }
+
+};

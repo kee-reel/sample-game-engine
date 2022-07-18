@@ -22,3 +22,6 @@
 [submodule "libs/json"]
 	path = libs/json
 	url = https://github.com/nlohmann/json
+[submodule "libs/boost-cmake"]
+	path = libs/boost-cmake
+	url = https://github.com/Orphis/boost-cmake.git

@@ -63,3 +63,8 @@ add_subdirectory( json )
 include_directories(
 	json/include/
 )
+
+### boost ###
+
+add_subdirectory(boost-cmake)
+

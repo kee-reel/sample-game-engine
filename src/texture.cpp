@@ -17,9 +17,10 @@
 
 #include "util.h"
 
+namespace sge
+{
 
 Texture::Texture(const std::string &path) :
-	Component(Component::TEXTURE),
 	m_path(path),
 	m_ok(false)
 {
@@ -113,3 +114,5 @@ void Texture::apply_data()
 	m_texture = texture;
 	m_ok = true;
 }
+
+};

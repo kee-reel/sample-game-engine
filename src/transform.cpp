@@ -3,10 +3,12 @@
 #include "includes.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-Transform::Transform() :
-	m_pos(glm::vec3(0., 0., 0.)),
-	m_rot(glm::vec3(0., 0., 0.)),
-	m_scale(glm::vec3(1., 1., 1.))
+const glm::vec3 UP = {0.0f, 1.0f, 0.0f};
+
+Transform::Transform(const glm::vec3 &pos, const glm::vec3 &rot, const glm::vec3 &scale) :
+	m_pos(pos),
+	m_rot(rot),
+	m_scale(scale)
 {
 	recalc();
 }
@@ -14,6 +16,17 @@ Transform::Transform() :
 Transform::~Transform()
 {
 
+}
+
+Transform& Transform::operator=(Transform &&other)
+{
+    std::scoped_lock guard(m_mutex, other.m_mutex);
+    std::swap(m_pos, other.m_pos);
+    std::swap(m_rot, other.m_rot);
+    std::swap(m_scale, other.m_scale);
+    std::swap(m_model, other.m_model);
+    std::swap(m_front, other.m_front);
+    return *this;
 }
 
 glm::mat4 Transform::get_model() const
@@ -48,8 +61,7 @@ glm::vec3 Transform::front() const
 
 glm::vec3 Transform::up() const
 {
-    std::lock_guard<std::mutex> guard(m_mutex);
-    return m_up;
+    return UP;
 }
 
 void Transform::set_pos(glm::vec3 pos)
@@ -76,7 +88,7 @@ void Transform::set_scale(glm::vec3 scale)
 void Transform::move(glm::vec3 diff)
 {
     std::lock_guard<std::mutex> guard(m_mutex);
-    auto right = glm::normalize(glm::cross(m_front, m_up));
+    auto right = glm::normalize(glm::cross(m_front, UP));
 	m_pos += right * diff.x;
 	m_pos += glm::normalize(glm::cross(m_front, right)) * diff.y;
 	m_pos += diff.z * m_front;

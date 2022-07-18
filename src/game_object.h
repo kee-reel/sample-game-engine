@@ -3,15 +3,11 @@
 #include "includes.h"
 
 #include "transform.h"
-#include "component.h"
 
-
-class GameObject : public Component
+class GameObject
 {
 public:
-    GameObject() :
-        Component(Component::GAME_OBJECT)
-    {}
+    GameObject() {}
 
 	virtual ~GameObject() {}
 

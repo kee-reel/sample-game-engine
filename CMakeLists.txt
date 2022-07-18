@@ -42,10 +42,12 @@ set( HEADERS
 	src/sge.h
 	src/application.h
 	src/resource_loader.h
-	src/component.h
 	src/game_object.h
 	src/script.h
-    #src/script_state.h
+    src/script_state.h
+    src/iscript_manager.h
+    src/script_manager.h
+	src/model.h
 	src/mesh.h
 	src/shader.h
 	src/texture.h
@@ -57,6 +59,7 @@ set( HEADERS
 	src/util.h
 	src/includes.h
 	src/tick_limiter.h
+	src/timer.h
 
     #    src/ECS/ecs.h
     #    src/ECS/entity.h
@@ -72,6 +75,7 @@ set( HEADERS
 set( SOURCES
 	src/application.cpp
 	src/resource_loader.cpp
+	src/model.cpp
 	src/mesh.cpp
 	src/shader.cpp
 	src/texture.cpp
@@ -81,6 +85,7 @@ set( SOURCES
 	src/light.cpp
 	src/shader_config.cpp
 	src/util.cpp
+    src/script_manager.cpp
 
     #    src/ECS/ecs.cpp
     #    src/ECS/entity.cpp
@@ -100,6 +105,8 @@ target_link_libraries( ${PROJECT_NAME} PRIVATE
     sol2
     assimp
     nlohmann_json
+    Boost::boost
+    Boost::system
 )
 target_include_directories( ${PROJECT_NAME} PRIVATE
 	${PROJECT_BINARY_DIR} ${PROJECT_SOURCE_DIR}
